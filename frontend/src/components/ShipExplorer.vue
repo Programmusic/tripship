@@ -282,10 +282,11 @@ function startInteriorWalk() {
   interiorMeta = interiorData.meta
   stars.visible = false
   dock.visible = false
-  renderer.toneMappingExposure = 1.45
+  const isDeck = loc.id === 'mixes'
+  renderer.toneMappingExposure = isDeck ? 1.75 : 1.45
   if (bloomPass) {
-    bloomPass.strength = isMobile.value ? 0.5 : 0.75
-    bloomPass.threshold = 0.35
+    bloomPass.strength = isDeck ? (isMobile.value ? 0.85 : 1.15) : (isMobile.value ? 0.5 : 0.75)
+    bloomPass.threshold = isDeck ? 0.22 : 0.35
   }
 
   fpsController.bounds = interiorMeta.bounds

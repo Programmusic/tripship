@@ -14,6 +14,7 @@ import {
   populateMemories,
   populateTheList,
 } from './roomContent.js'
+import { createDeckSessionsMeta, animateDeckStage } from './deckStage.js'
 
 const ROOM_SIZE = { w: 9, d: 11, h: 3.4 }
 const BPM = 128
@@ -150,9 +151,8 @@ function buildMixes(accent) {
   })
 
   populateDeckSessions(room, w, d, h)
-  createTerminal(room, [w / 2 - 1.2, 0, -d / 2 + 4], 'Deck Rig', accent)
 
-  return { room, meta: createRoomMeta(w, d) }
+  return { room, meta: createDeckSessionsMeta(w, d) }
 }
 
 function buildTheList(accent) {
@@ -218,62 +218,12 @@ function collectInteractables(group) {
   group.userData.interactables = interactables
 }
 
-function animateDJ(dj, time, beat) {
-  if (!dj) return
-  if (dj.userData.baseY === undefined) dj.userData.baseY = dj.position.y
-  dj.position.y = dj.userData.baseY + Math.sin(beat) * 0.07
-  dj.traverse((obj) => {
-    if (obj.userData.animType === 'jaw') {
-      obj.rotation.x = Math.sin(beat * 2) * 0.15
-    }
-    if (obj.userData.animType === 'armL') {
-      obj.rotation.z = 0.3 + Math.sin(beat * 1.5) * 0.25
-    }
-    if (obj.userData.animType === 'tentacle') {
-      obj.rotation.z = -0.5 + Math.sin(beat * 2 + 1) * 0.35
-      obj.rotation.x = 0.2 + Math.cos(beat * 3) * 0.15
-    }
-    if (obj.userData.animType === 'halo') {
-      obj.rotation.z = time * 0.8
-    }
-    if (obj.userData.pulse !== undefined && obj.material?.emissiveIntensity !== undefined) {
-      obj.material.emissiveIntensity = 2 + Math.sin(beat * 4) * 1.5
-    }
-  })
-  if (dj.userData.eyeLight) {
-    dj.userData.eyeLight.intensity = 3 + Math.sin(beat * 4) * 2
-  }
-}
-
-function animateRig(rig, time) {
-  if (!rig) return
-  rig.traverse((obj) => {
-    if (obj.userData.spin) {
-      obj.rotation.y = time * 2.8
-    }
-    if (obj.userData.waveform !== undefined) {
-      const phase = obj.userData.waveform
-      obj.material.emissiveIntensity = 0.8 + Math.sin(time * 6 + phase) * 0.6
-    }
-    if (obj.userData.animType === 'sign') {
-      obj.material.emissiveIntensity = 1.2 + Math.sin(time * 4) * 0.5
-    }
-    if (obj.userData.laserIndex !== undefined) {
-      obj.rotation.z = Math.sin(time * 2 + obj.userData.laserIndex * 1.2) * 0.4
-      obj.material.opacity = 0.2 + Math.abs(Math.sin(time * 3 + obj.userData.laserIndex)) * 0.25
-    }
-    if (obj.userData.animType === 'bassStack' && obj.userData.stackLight) {
-      obj.userData.stackLight.intensity = 6 + Math.sin(time * BEAT * Math.PI * 2) * 4
-    }
-    if (obj.userData.pulse !== undefined && obj.isMesh) {
-      const s = 1 + Math.sin(time * BEAT * Math.PI * 2 + obj.userData.pulse) * 0.12
-      obj.scale.set(s, s, s)
-    }
-  })
-}
-
 export function animateInterior(group, time) {
   const beat = time * BEAT * Math.PI * 2
+
+  if (group?.userData?.stage) {
+    animateDeckStage(group.userData.stage, time, beat)
+  }
 
   group?.traverse((obj) => {
     if (obj.userData.pulse !== undefined && !obj.userData.animType) {
@@ -300,10 +250,14 @@ export function animateInterior(group, time) {
         }
       })
     }
+    if (obj.userData.animType === 'bassStack' && obj.userData.stackLight) {
+      obj.userData.stackLight.intensity = 6 + Math.sin(beat) * 5
+    }
+    if (obj.userData.pulse !== undefined && obj.isMesh && obj.userData.animType === 'bassStack') {
+      const s = 1 + Math.sin(beat + obj.userData.pulse) * 0.1
+      obj.scale.set(s, s, s)
+    }
   })
-
-  animateDJ(group?.userData?.dj, time, beat)
-  animateRig(group?.userData?.rig, time)
 
   const strobe = group?.userData?.strobe
   const strobeCyan = group?.userData?.strobeCyan
