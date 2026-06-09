@@ -3,25 +3,40 @@
     <canvas ref="canvasRef" class="explorer__canvas" />
     <div ref="labelsRef" class="explorer__labels" />
 
+    <div
+      class="explorer__fade"
+      :class="{ 'explorer__fade--active': enterFade > 0 }"
+      :style="{ opacity: enterFade }"
+    />
+
+    <div class="explorer__vignette" :class="{ 'explorer__vignette--peek': viewMode === 'peek' }" />
+
     <div class="explorer__chrome">
       <RouterLink to="/" class="explorer__back btn btn--ghost">← Back to Port</RouterLink>
       <div class="explorer__hints">
-        <span>Drag to spin</span>
-        <span>·</span>
-        <span>Scroll to zoom</span>
-        <span>·</span>
-        <span>Tap a glowin' door</span>
+        <template v-if="viewMode === 'orbit'">
+          <span>Drag to spin</span><span>·</span><span>Scroll to zoom</span><span>·</span><span>Tap a door</span>
+        </template>
+        <template v-else-if="viewMode === 'flying'">
+          <span>Sailin' to the door...</span>
+        </template>
+        <template v-else>
+          <span>Peep inside</span><span>·</span><span>Enter when ready</span>
+        </template>
       </div>
     </div>
 
     <Transition name="panel">
-      <div v-if="selected" class="explorer__panel card">
-        <button class="panel-close" @click="selected = null" aria-label="Close">✕</button>
+      <div v-if="selected && viewMode === 'peek'" class="explorer__panel card">
+        <button class="panel-close" @click="releaseRoom" aria-label="Close">✕</button>
+        <p class="panel-eyebrow">☠ Below decks ☠</p>
         <h2>{{ selected.label }}</h2>
         <p>{{ selected.desc }}</p>
         <div class="panel-actions">
-          <button class="btn" @click="focusLocation(selected)">Zoom In</button>
-          <RouterLink :to="selected.route" class="btn btn--pink">Enter Room</RouterLink>
+          <button class="btn btn--ghost" @click="releaseRoom">Step Back</button>
+          <button class="btn btn--pink" @click="enterRoom">
+            Enter Room →
+          </button>
         </div>
       </div>
     </Transition>
@@ -32,6 +47,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
@@ -41,18 +57,30 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import { buildGalleon, animateGalleon } from '@/three/buildGalleon.js'
 import { createStarLayer } from '@/three/createUniverse.js'
 import { createHotspotMarkers, animateHotspots, SHIP_LOCATIONS } from '@/three/shipHotspots.js'
+import { createShipInteriors, showInteriorPeek, hideAllInteriors } from '@/three/shipInteriors.js'
+import {
+  createDoorFlight,
+  updateFlight,
+  advanceFlightPhase,
+  startEnterFlight,
+} from '@/three/cameraFlight.js'
 
+const router = useRouter()
 const containerRef = ref(null)
 const canvasRef = ref(null)
 const labelsRef = ref(null)
 const ready = ref(false)
 const selected = ref(null)
+const viewMode = ref('orbit') // orbit | flying | peek
+const enterFade = ref(0)
 
 let renderer, labelRenderer, composer, scene, camera, ship, controls, hotspots, clock
+let interiorRooms
 let animId = 0
 let resizeObserver
-let cameraTarget = null
+let activeFlight = null
 let raycaster, pointer
+let labelElements = []
 
 function init() {
   const container = containerRef.value
@@ -66,7 +94,7 @@ function init() {
 
   scene = new THREE.Scene()
   scene.background = new THREE.Color(0x020408)
-  scene.fog = new THREE.FogExp2(0x020408, 0.025)
+  scene.fog = new THREE.FogExp2(0x020408, 0.022)
 
   camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 200)
   camera.position.set(5, 3, 5)
@@ -75,7 +103,7 @@ function init() {
   renderer.setSize(width, height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2))
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.1
+  renderer.toneMappingExposure = 1.15
 
   labelRenderer = new CSS2DRenderer()
   labelRenderer.setSize(width, height)
@@ -84,22 +112,19 @@ function init() {
   labelRenderer.domElement.style.pointerEvents = 'none'
   labelsEl.appendChild(labelRenderer.domElement)
 
-  scene.add(new THREE.AmbientLight(0x334466, 0.6))
-  const key = new THREE.DirectionalLight(0xffeedd, 1.4)
+  scene.add(new THREE.AmbientLight(0x334466, 0.55))
+  const key = new THREE.DirectionalLight(0xffeedd, 1.5)
   key.position.set(6, 10, 4)
   scene.add(key)
-  const rim = new THREE.DirectionalLight(0x00ffcc, 0.5)
+  const rim = new THREE.DirectionalLight(0x00ffcc, 0.45)
   rim.position.set(-4, 2, -3)
   scene.add(rim)
 
-  // Subtle star backdrop — ship is the focus
-  const stars = createStarLayer(isMobile ? 1500 : 3000, 80, 0.1, 0xffffff, 0.8)
-  scene.add(stars)
+  scene.add(createStarLayer(isMobile ? 1500 : 3000, 80, 0.1, 0xffffff, 0.8))
 
-  // Dock platform
   const dock = new THREE.Mesh(
     new THREE.CylinderGeometry(5, 5.5, 0.15, 48),
-    new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.9, metalness: 0.2 })
+    new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.9 })
   )
   dock.position.y = -0.85
   scene.add(dock)
@@ -108,10 +133,8 @@ function init() {
   ship.rotation.y = Math.PI / 4
   scene.add(ship)
 
-  hotspots = createHotspotMarkers(ship, (loc) => {
-    selected.value = loc
-    focusLocation(loc)
-  })
+  hotspots = createHotspotMarkers(ship)
+  interiorRooms = createShipInteriors(ship, SHIP_LOCATIONS)
 
   SHIP_LOCATIONS.forEach((loc) => {
     const el = document.createElement('button')
@@ -119,35 +142,34 @@ function init() {
     el.textContent = loc.label
     el.addEventListener('click', (e) => {
       e.stopPropagation()
-      selected.value = loc
-      focusLocation(loc)
+      selectRoom(loc)
     })
+    labelElements.push(el)
     const label = new CSS2DObject(el)
     label.position.copy(loc.position)
-    label.position.y += 0.35
+    label.position.y += 0.45
     ship.add(label)
   })
 
   controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
-  controls.dampingFactor = 0.05
-  controls.minDistance = 2
+  controls.dampingFactor = 0.06
+  controls.minDistance = 2.2
   controls.maxDistance = 14
-  controls.maxPolarAngle = Math.PI / 1.6
+  controls.maxPolarAngle = Math.PI / 1.55
   controls.target.set(0, 0.5, 0)
 
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
   composer.addPass(new UnrealBloomPass(
     new THREE.Vector2(width, height),
-    isMobile ? 0.8 : 1.2,
-    0.45,
-    0.18
+    isMobile ? 0.9 : 1.35,
+    0.5,
+    0.15
   ))
 
   raycaster = new THREE.Raycaster()
   pointer = new THREE.Vector2()
-
   canvas.addEventListener('pointerdown', onPointerDown)
 
   clock = new THREE.Clock()
@@ -155,17 +177,36 @@ function init() {
   animate()
 }
 
-function focusLocation(loc) {
-  const worldPos = loc.position.clone()
-  ship.localToWorld(worldPos)
-  cameraTarget = {
-    position: worldPos.clone().add(new THREE.Vector3(1.2, 0.8, 1.2)),
-    lookAt: worldPos,
-    t: 0,
-  }
+function selectRoom(loc) {
+  if (viewMode.value === 'flying' || viewMode.value === 'entering') return
+
+  hideAllInteriors(interiorRooms.rooms)
+  selected.value = loc
+  viewMode.value = 'flying'
+  controls.enabled = false
+
+  activeFlight = createDoorFlight(camera, controls, ship, loc)
+  activeFlight.progress = 0
+}
+
+function releaseRoom() {
+  hideAllInteriors(interiorRooms.rooms)
+  selected.value = null
+  viewMode.value = 'orbit'
+  activeFlight = null
+  controls.enabled = true
+  enterFade.value = 0
+}
+
+function enterRoom() {
+  if (!selected.value || !activeFlight) return
+  viewMode.value = 'entering'
+  startEnterFlight(activeFlight)
 }
 
 function onPointerDown(event) {
+  if (viewMode.value !== 'orbit') return
+
   const rect = canvasRef.value.getBoundingClientRect()
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
@@ -175,34 +216,60 @@ function onPointerDown(event) {
   if (hits.length > 0) {
     let obj = hits[0].object
     while (obj.parent && !obj.userData.location) obj = obj.parent
-    if (obj.userData.location) {
-      selected.value = obj.userData.location
-      focusLocation(obj.userData.location)
-    }
+    if (obj.userData.location) selectRoom(obj.userData.location)
   }
 }
 
 function animate() {
   animId = requestAnimationFrame(animate)
+  const delta = clock.getDelta()
   const time = clock.getElapsedTime()
 
-  animateGalleon(ship, time * 0.3)
-  ship.rotation.y += 0.001
-  animateHotspots(hotspots, time)
+  animateGalleon(ship, time * 0.2)
+  if (viewMode.value === 'orbit') {
+    ship.rotation.y += 0.0008
+  }
 
-  if (cameraTarget) {
-    cameraTarget.t += 0.04
-    const alpha = 0.06
-    camera.position.lerp(cameraTarget.position, alpha)
-    controls.target.lerp(cameraTarget.lookAt, alpha)
-    if (camera.position.distanceTo(cameraTarget.position) < 0.05) {
-      cameraTarget = null
+  animateHotspots(hotspots, time, selected.value?.id)
+
+  if (activeFlight) {
+    const result = updateFlight(activeFlight, delta)
+
+    if (result.position) camera.position.copy(result.position)
+    if (result.target) controls.target.copy(result.target)
+
+    const roomEntry = interiorRooms.rooms.get(activeFlight.location.id)
+    if (roomEntry && result.peekProgress > 0) {
+      showInteriorPeek(roomEntry, result.peekProgress)
+    }
+
+    if (result.done) {
+      if (result.phase === 'approach') {
+        advanceFlightPhase(activeFlight)
+      } else if (result.phase === 'peek') {
+        viewMode.value = 'peek'
+        showInteriorPeek(roomEntry, 1)
+      } else if (result.phase === 'enter') {
+        enterFade.value = Math.min(1, (result.enterProgress ?? 1) * 1.2)
+        if (result.enterProgress >= 0.85) {
+          const route = activeFlight.location.route
+          releaseRoom()
+          router.push(route)
+          return
+        }
+      }
     }
   }
 
-  controls.update()
+  if (controls.enabled) controls.update()
+
   composer.render()
   labelRenderer.render(scene, camera)
+
+  labelElements.forEach((el) => {
+    el.style.opacity = viewMode.value === 'orbit' ? '1' : '0.35'
+    el.style.pointerEvents = viewMode.value === 'orbit' ? 'auto' : 'none'
+  })
 }
 
 function onResize() {
@@ -256,23 +323,51 @@ onUnmounted(cleanup)
 
 .explorer__labels :deep(.hotspot-label) {
   pointer-events: auto;
-  background: rgba(10, 14, 24, 0.85);
+  background: rgba(10, 14, 24, 0.9);
   border: 1px solid var(--gold);
   color: var(--gold);
   font-family: var(--font-mono);
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0.35rem 0.6rem;
+  padding: 0.4rem 0.7rem;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: opacity 0.4s, background 0.2s, transform 0.2s;
 }
 
 .explorer__labels :deep(.hotspot-label:hover) {
   background: var(--gold);
   color: var(--bg-deep);
-  box-shadow: 0 0 12px rgba(201, 162, 39, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(201, 162, 39, 0.6);
+}
+
+.explorer__fade {
+  position: absolute;
+  inset: 0;
+  background: #020408;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s linear;
+  z-index: 20;
+}
+
+.explorer__fade--active {
+  pointer-events: all;
+}
+
+.explorer__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(2, 4, 8, 0.5) 100%);
+  transition: background 0.8s ease;
+  z-index: 2;
+}
+
+.explorer__vignette--peek {
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(2, 4, 8, 0.85) 100%);
 }
 
 .explorer__chrome {
@@ -287,6 +382,7 @@ onUnmounted(cleanup)
   pointer-events: none;
   flex-wrap: wrap;
   gap: 0.75rem;
+  z-index: 10;
 }
 
 .explorer__chrome > * {
@@ -310,12 +406,22 @@ onUnmounted(cleanup)
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  width: min(400px, calc(100% - 2rem));
-  z-index: 10;
+  width: min(420px, calc(100% - 2rem));
+  z-index: 15;
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 40px rgba(201, 162, 39, 0.2);
+}
+
+.panel-eyebrow {
+  font-size: 0.65rem;
+  color: var(--neon-cyan);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
 }
 
 .explorer__panel h2 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: var(--gold);
   margin-bottom: 0.5rem;
   padding-right: 1.5rem;
@@ -325,6 +431,7 @@ onUnmounted(cleanup)
   color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 1.25rem;
+  line-height: 1.6;
 }
 
 .panel-close {
@@ -341,23 +448,21 @@ onUnmounted(cleanup)
 .panel-actions {
   display: flex;
   gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
 .panel-actions .btn {
   flex: 1;
-  min-width: 120px;
 }
 
 .panel-enter-active,
 .panel-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
 }
 
 .panel-enter-from,
 .panel-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(20px);
+  transform: translateX(-50%) translateY(24px);
 }
 
 .explorer__loading {
@@ -369,5 +474,6 @@ onUnmounted(cleanup)
   background: #020408;
   color: var(--gold);
   font-size: 0.9rem;
+  z-index: 30;
 }
 </style>
