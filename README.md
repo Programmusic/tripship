@@ -2,7 +2,18 @@
 
 A community platform for the Trip Ship sound system crew. Share rave memories, catch DJ mixes, and connect with the family.
 
-Built with **Vue 3**, **Node.js/Express**, and **Terraform** for backend infrastructure. Deploys to [Vercel](https://vercel.com/).
+Built with **Vue 3**, planned **Cloud Functions + Firestore** backend, and **Terraform** for Vercel/GCP infrastructure.
+
+## View the design (fastest)
+
+No backend needed — runs with mock data and auto-login as a DJ:
+
+```bash
+npm install
+npm run design
+```
+
+Open http://localhost:5173 — you'll see the full Trip Ship UI with sample memories and mixes.
 
 ## Features
 
@@ -16,10 +27,10 @@ Built with **Vue 3**, **Node.js/Express**, and **Terraform** for backend infrast
 | Layer | Tech |
 |-------|------|
 | Frontend | Vue 3, Vite, Vue Router, Pinia |
-| Backend | Node.js, Express, JWT auth |
-| Database | SQLite (dev) / PostgreSQL (prod) |
-| Infra | Terraform (optional self-hosted Postgres) |
-| Deploy | Vercel (frontend + serverless API) |
+| Backend (planned) | Cloud Functions + Firestore |
+| Backend (current) | Express API for local dev |
+| Infra (planned) | Terraform for Vercel + GCP |
+| Deploy | Vercel (frontend) |
 
 ## Quick Start (Local Dev)
 

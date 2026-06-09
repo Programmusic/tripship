@@ -4,14 +4,31 @@
       <div class="hero__badge">Est. 1994</div>
       <h1 class="hero__title">Trip Ship</h1>
       <p class="hero__subtitle">The 90s sound system that never docked</p>
+      <BassVisualizer />
       <p class="hero__desc">
         Rewind to warehouse raves, stacked bass bins, and pirate radio energy.
         Share your memories, catch fresh DJ mixes, and ride the wave with the crew.
       </p>
       <div class="hero__actions">
-        <RouterLink to="/register" class="btn btn--pink">Join the Crew</RouterLink>
-        <RouterLink to="/memories" class="btn">Browse Memories</RouterLink>
+        <RouterLink to="/memories" class="btn btn--pink">Browse Memories</RouterLink>
+        <RouterLink to="/mixes" class="btn">DJ Mixes</RouterLink>
       </div>
+    </section>
+
+    <section v-if="isDemoMode" class="preview">
+      <h2 class="preview__heading">From the vault</h2>
+      <div class="preview__grid">
+        <MemoryCard v-for="memory in previewMemories" :key="memory.id" :memory="memory" />
+      </div>
+      <RouterLink to="/memories" class="preview__more">See all memories →</RouterLink>
+    </section>
+
+    <section v-if="isDemoMode" class="preview preview--mixes">
+      <h2 class="preview__heading">On the decks</h2>
+      <div class="preview__mixes">
+        <MixCard v-for="mix in previewMixes" :key="mix.id" :mix="mix" />
+      </div>
+      <RouterLink to="/mixes" class="preview__more">All DJ mixes →</RouterLink>
     </section>
 
     <section class="features">
@@ -31,7 +48,7 @@
         <div class="feature__icon">🔊</div>
         <h2>Crew Login</h2>
         <p>Create your account, build your profile, and connect with the Trip Ship family worldwide.</p>
-        <RouterLink to="/login" class="feature__link">Sign in →</RouterLink>
+        <RouterLink to="/profile" class="feature__link">Your profile →</RouterLink>
       </div>
     </section>
 
@@ -51,6 +68,17 @@
     </section>
   </div>
 </template>
+
+<script setup>
+import BassVisualizer from '@/components/BassVisualizer.vue'
+import MemoryCard from '@/components/MemoryCard.vue'
+import MixCard from '@/components/MixCard.vue'
+import { isDemoMode } from '@/api/client.js'
+import { mockMemories, mockMixes } from '@/demo/mockData.js'
+
+const previewMemories = mockMemories.slice(0, 2)
+const previewMixes = mockMixes.slice(0, 2)
+</script>
 
 <style scoped>
 .hero {
@@ -76,7 +104,6 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: none;
   filter: drop-shadow(0 0 30px rgba(255, 0, 255, 0.3));
   margin-bottom: 0.5rem;
 }
@@ -86,7 +113,7 @@
   font-size: clamp(1.2rem, 3vw, 1.8rem);
   color: var(--neon-cyan);
   letter-spacing: 0.15em;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .hero__desc {
@@ -102,6 +129,43 @@
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.preview {
+  margin-bottom: 4rem;
+}
+
+.preview--mixes {
+  margin-bottom: 3rem;
+}
+
+.preview__heading {
+  font-size: 1.8rem;
+  color: var(--neon-pink);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.preview__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview__mixes {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview__more {
+  display: block;
+  text-align: center;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .features {
