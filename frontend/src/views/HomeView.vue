@@ -4,11 +4,12 @@
       <div class="hero__badge">☠ Unsocial Media ☠</div>
       <h1 class="hero__title">Trip Ship</h1>
       <p class="hero__subtitle">If yer name ain't on the list, ye ain't comin' in</p>
-      <PirateShip />
-      <BassVisualizer />
+
+      <GalleonUniverse />
+
       <p class="hero__desc">
-        Ahoy! This be the 90s sound system that never docked. A private crew for mates from back in the day —
-        share tales from the dancefloor, plunder the <strong>Aaaarrifacts</strong>, catch DJ mixes,
+        Ahoy! The galleon sails the cosmos with bass bins rigged to the masts. A private crew for mates
+        from back in the day — share tales, plunder the <strong>Aaaarrifacts</strong>, catch deck sessions,
         and read the <strong>Captain's Cabin</strong>. No algorithms. No randos. Just family.
       </p>
       <div class="hero__actions">
@@ -72,8 +73,9 @@
 </template>
 
 <script setup>
-import PirateShip from '@/components/PirateShip.vue'
-import BassVisualizer from '@/components/BassVisualizer.vue'
+import { defineAsyncComponent } from 'vue'
+
+const GalleonUniverse = defineAsyncComponent(() => import('@/components/GalleonUniverse.vue'))
 import MemoryCard from '@/components/MemoryCard.vue'
 import { isDemoMode } from '@/api/client.js'
 import { mockMemories } from '@/demo/mockData.js'
@@ -84,7 +86,7 @@ const previewMemories = mockMemories.slice(0, 2)
 <style scoped>
 .hero {
   text-align: center;
-  padding: 2rem 0 3rem;
+  padding: 1rem 0 3rem;
 }
 
 .hero__badge {
@@ -113,7 +115,7 @@ const previewMemories = mockMemories.slice(0, 2)
   font-size: clamp(1rem, 3vw, 1.5rem);
   color: var(--neon-pink);
   letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
   font-style: italic;
 }
 
