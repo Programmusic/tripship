@@ -1,106 +1,101 @@
-<p align="center">
-  <a href="https://www.gatsbyjs.org">
-    <img alt="Gatsby" src="https://www.gatsbyjs.org/monogram.svg" width="60" />
-  </a>
-</p>
-<h1 align="center">
-  Gatsby's default starter
-</h1>
+# Trip Ship — 90s Sound System
 
-Kick off your project with this default boilerplate. This barebones starter ships with the main Gatsby configuration files you might need. 
+A community platform for the Trip Ship sound system crew. Share rave memories, catch DJ mixes, and connect with the family.
 
-_Have another more specific idea? You may want to check out our vibrant collection of [official and community-created starters](https://www.gatsbyjs.org/docs/gatsby-starters/)._
+Built with **Vue 3**, **Node.js/Express**, and **Terraform** for backend infrastructure. Deploys to [Vessl](https://vessl.sh/) on your own VPS.
 
-## 🚀 Quick start
+## Features
 
-1.  **Install the Gatsby CLI.**
+- **User accounts** — Register, login, and manage your crew profile
+- **Memory vault** — Share stories from warehouse parties, sound clashes, and free raves
+- **DJ mixes** — Selectors upload jungle, dub, garage, and hardcore sessions
+- **90s aesthetic** — Neon CRT vibes, bass-bin energy
 
-    The Gatsby CLI helps you create new sites using Gatsby starters (like this one!)
+## Stack
 
-    ```sh
-    # install the Gatsby CLI globally
-    npm install -g gatsby-cli
-    ```
+| Layer | Tech |
+|-------|------|
+| Frontend | Vue 3, Vite, Vue Router, Pinia |
+| Backend | Node.js, Express, JWT auth |
+| Database | SQLite (dev) / PostgreSQL (prod) |
+| Infra | Terraform (Docker Postgres + volumes) |
+| Deploy | Vessl, Docker, Nixpacks |
 
-2.  **Create a Gatsby site.**
+## Quick Start (Local Dev)
 
-    Use the Gatsby CLI to create a new site, specifying the default starter.
+```bash
+# Install dependencies
+npm install
 
-    ```sh
-    # create a new Gatsby site using the default starter
-    gatsby new my-default-starter
-    ```
+# Start frontend + backend
+npm run dev
+```
 
-3.  **Start developing.**
+- Frontend: http://localhost:5173
+- API: http://localhost:3000/api
 
-    Navigate into your new site’s directory and start it up.
+## Production with Docker Compose
 
-    ```sh
-    cd my-default-starter/
-    gatsby develop
-    ```
+```bash
+cp .env.example .env
+# Edit JWT_SECRET in .env
 
-4.  **Open the source code and start editing!**
+docker compose up --build
+```
 
-    Your site is now running at `http://localhost:8000`!
-    
-    *Note: You'll also see a second link: `http://localhost:8000/___graphql`. This is a tool you can use to experiment with querying your data. Learn more about using this tool in the [Gatsby tutorial](https://www.gatsbyjs.org/tutorial/part-five/#introducing-graphiql).*
-    
-    Open the the `my-default-starter` directory in your code editor of choice and edit `src/pages/index.js`. Save your changes and the browser will update in real time!
-    
-## 🧐 What's inside?
+App runs at http://localhost:3000
 
-A quick look at the top-level files and directories you'll see in a Gatsby project.
+## Terraform (Backend Infrastructure)
 
-    .
-    ├── node_modules
-    ├── src
-    ├── .gitignore
-    ├── .prettierrc
-    ├── gatsby-browser.js
-    ├── gatsby-config.js
-    ├── gatsby-node.js
-    ├── gatsby-ssr.js
-    ├── LICENSE
-    ├── package-lock.json
-    ├── package.json
-    ├── README.md
-    └── yarn.lock
+Provision PostgreSQL and upload volumes on your VPS:
 
-  1.  **`/node_modules`**: The directory where all of the modules of code that your project depends on (npm packages) are automatically installed.  
-  
-  2.  **`/src`**: This directory will contain all of the code related to what you will see on the front-end of your site (what you see in the browser), like your site header, or a page template. “Src” is a convention for “source code”.
-  
-  3.  **`.gitignore`**: This file tells git which files it should not track / not maintain a version history for.
-  
-  4.  **`.prettierrc`**: This is a configuration file for a tool called [Prettier](https://prettier.io/), which is a tool to help keep the formatting of your code consistent.
-  
-  5.  **`gatsby-browser.js`**: This file is where Gatsby expects to find any usage of the [Gatsby browser APIs](https://www.gatsbyjs.org/docs/browser-apis/) (if any). These allow customization/extension of default Gatsby settings affecting the browser.
-  
-  6.  **`gatsby-config.js`**: This is the main configuration file for a Gatsby site. This is where you can specify information about your site (metadata) like the site title and description, which Gatsby plugins you’d like to include, etc. (Check out the [config docs](https://www.gatsbyjs.org/docs/gatsby-config/) for more detail).
-  
-  7.  **`gatsby-node.js`**: This file is where Gatsby expects to find any usage of the [Gatsby node APIs](https://www.gatsbyjs.org/docs/node-apis/) (if any). These allow customization/extension of default Gatsby settings affecting pieces of the site build process.
-  
-  8.  **`gatsby-ssr.js`**: This file is where Gatsby expects to find any usage of the [Gatsby server-side rendering APIs](https://www.gatsbyjs.org/docs/ssr-apis/) (if any). These allow customization of default Gatsby settings affecting server-side rendering.
-  
-  9.  **`LICENSE`**: Gatsby is licensed under the MIT license.
-  
-  10.  **`package-lock.json`** (See `package.json` below, first). This is an automatically generated file based on the exact versions of your npm dependencies that were installed for your project. (You won’t change this file directly).
-  
-  11.  **`package.json`**: A manifest file for Node.js projects, which includes things like metadata (the project’s name, author, etc). This manifest is how npm knows which packages to install for your project.
-  
-  12.  **`README.md`**: A text file containing useful reference information about your project.
-  
-  13.  **`yarn.lock`**: [Yarn](https://yarnpkg.com/) is a package manager alternative to npm. You can use either yarn or npm, though all of the Gatsby docs reference npm.  This file serves essentially the same purpose as `package-lock.json`, just for a different package management system.
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your db_password
 
-## 🎓 Learning Gatsby
+terraform init
+terraform apply
+```
 
-Looking for more guidance? Full documentation for Gatsby lives [on the website](https://www.gatsbyjs.org/). Here are some places to start:
+Set the output `database_url` as `DATABASE_URL` in your deployment environment.
 
--   **For most developers, we recommend starting with our [in-depth tutorial for creating a site with Gatsby](https://www.gatsbyjs.org/tutorial/).** It starts with zero assumptions about your level of ability and walks through every step of the process.
+## Deploy to Vessl
 
--   **To dive straight into code samples head [to our documentation](https://www.gatsbyjs.org/docs/).** In particular, check out the “Guides”, API reference, and “Advanced Tutorials” sections in the sidebar.
+1. Connect your GitHub repo in the [Vessl dashboard](https://vessl.sh/)
+2. Add your VPS via SSH
+3. Set environment variables:
+   - `JWT_SECRET` — strong random secret
+   - `DATABASE_URL` — from Terraform output (or use SQLite for small setups)
+   - `PORT` — `3000`
+4. Push to your configured branch — Vessl auto-builds via Nixpacks
 
-## 💫 Deploy
+The root `nixpacks.toml` and `Dockerfile` are both supported.
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/gatsbyjs/gatsby-starter-default)
+## API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/register` | — | Create account |
+| POST | `/api/auth/login` | — | Login |
+| GET | `/api/memories` | — | List memories |
+| POST | `/api/memories` | ✓ | Share a memory |
+| GET | `/api/mixes` | — | List DJ mixes |
+| POST | `/api/mixes` | ✓ DJ | Upload a mix |
+| GET | `/api/health` | — | Health check |
+
+## Project Structure
+
+```
+tripship/
+├── frontend/          Vue 3 SPA
+├── backend/           Express API
+├── terraform/         Infrastructure as code
+├── Dockerfile         Production container
+├── nixpacks.toml      Vessl build config
+└── docker-compose.yml Local full stack
+```
+
+## License
+
+MIT

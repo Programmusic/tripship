@@ -1,8 +1,25 @@
-# Project dependencies
-.cache
-node_modules
-yarn-error.log
-
-# Build directory
-/public
+node_modules/
+dist/
 .DS_Store
+*.log
+.env
+.env.local
+
+# Backend runtime data
+backend/data/
+backend/uploads/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Build
+frontend/dist/

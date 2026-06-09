@@ -1,0 +1,4 @@
+project_name = "tripship"
+db_name      = "tripship"
+db_user      = "tripship"
+db_password  = "change-me-to-a-strong-password"
