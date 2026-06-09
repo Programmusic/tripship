@@ -70,8 +70,8 @@ The repo is configured for **frontend-only** deploys with demo data — no env v
 
 ```bash
 # Settings (already in vercel.json)
-Install:  npm install
-Build:    npm run build -w frontend
+Install:  npm install --prefix frontend
+Build:    npm run build --prefix frontend
 Output:   frontend/dist
 ```
 
