@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-function createStarLayer(count, spread, size, color, opacity) {
+export function createStarLayer(count, spread, size, color, opacity) {
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
   const c = new THREE.Color(color)

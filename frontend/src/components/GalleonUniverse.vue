@@ -5,6 +5,9 @@
     <div class="universe-wrap__hud" aria-hidden="true">
       <span class="hud-coords">RA 14h 32m · DEC +42° · WARP {{ warpDisplay }}</span>
     </div>
+    <RouterLink to="/ship" class="universe-wrap__board btn btn--pink">
+      ☠ Board the Ship
+    </RouterLink>
     <div v-if="!ready" class="universe-wrap__loading">
       <span>Hoistin' the galleon into the void...</span>
     </div>
@@ -201,6 +204,23 @@ onUnmounted(cleanup)
   color: rgba(0, 255, 204, 0.5);
   letter-spacing: 0.15em;
   text-transform: uppercase;
+}
+
+.universe-wrap__board {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 0.85rem;
+  padding: 0.85rem 1.75rem;
+  box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+  animation: board-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes board-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 255, 0.25); }
+  50% { box-shadow: 0 0 40px rgba(255, 0, 255, 0.5); }
 }
 
 .universe-wrap__loading {

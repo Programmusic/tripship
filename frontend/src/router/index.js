@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   { path: '/', name: 'home', component: () => import('@/views/HomeView.vue') },
+  { path: '/ship', name: 'ship', component: () => import('@/views/ShipExploreView.vue'), meta: { immersive: true } },
   { path: '/memories', name: 'memories', component: () => import('@/views/MemoriesView.vue') },
   { path: '/mixes', name: 'mixes', component: () => import('@/views/MixesView.vue') },
   { path: '/aaaarrifacts', name: 'aaaarrifacts', component: () => import('@/views/AaaarrifactsView.vue') },

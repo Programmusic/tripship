@@ -13,8 +13,9 @@
         and read the <strong>Captain's Cabin</strong>. No algorithms. No randos. Just family.
       </p>
       <div class="hero__actions">
-        <RouterLink to="/register" class="btn btn--pink">Get On The List</RouterLink>
-        <RouterLink to="/aaaarrifacts" class="btn">Browse Aaaarrifacts</RouterLink>
+        <RouterLink to="/ship" class="btn btn--pink">☠ Board the Ship</RouterLink>
+        <RouterLink to="/register" class="btn">Get On The List</RouterLink>
+        <RouterLink to="/aaaarrifacts" class="btn btn--ghost">Aaaarrifacts</RouterLink>
       </div>
     </section>
 
