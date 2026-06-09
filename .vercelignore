@@ -1,6 +1,6 @@
-api
-backend
-terraform
+/api
+/backend
+/terraform
 docker-compose.yml
 Dockerfile
 .env
