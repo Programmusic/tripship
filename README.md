@@ -2,7 +2,7 @@
 
 A community platform for the Trip Ship sound system crew. Share rave memories, catch DJ mixes, and connect with the family.
 
-Built with **Vue 3**, **Node.js/Express**, and **Terraform** for backend infrastructure. Deploys to [Vessl](https://vessl.sh/) on your own VPS.
+Built with **Vue 3**, **Node.js/Express**, and **Terraform** for backend infrastructure. Deploys to [Vercel](https://vercel.com/).
 
 ## Features
 
@@ -18,8 +18,8 @@ Built with **Vue 3**, **Node.js/Express**, and **Terraform** for backend infrast
 | Frontend | Vue 3, Vite, Vue Router, Pinia |
 | Backend | Node.js, Express, JWT auth |
 | Database | SQLite (dev) / PostgreSQL (prod) |
-| Infra | Terraform (Docker Postgres + volumes) |
-| Deploy | Vessl, Docker, Nixpacks |
+| Infra | Terraform (optional self-hosted Postgres) |
+| Deploy | Vercel (frontend + serverless API) |
 
 ## Quick Start (Local Dev)
 
@@ -45,9 +45,30 @@ docker compose up --build
 
 App runs at http://localhost:3000
 
-## Terraform (Backend Infrastructure)
+## Deploy to Vercel
 
-Provision PostgreSQL and upload volumes on your VPS:
+1. Push this repo to GitHub
+2. Import the project in the [Vercel dashboard](https://vercel.com/new)
+3. Vercel auto-detects settings from `vercel.json`
+4. Add environment variables in Project Settings → Environment Variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JWT_SECRET` | Yes | Strong random secret for auth tokens |
+| `DATABASE_URL` | Yes | PostgreSQL connection string ([Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres), [Neon](https://neon.tech), or Supabase) |
+| `BLOB_READ_WRITE_TOKEN` | No | Enables DJ mix file uploads via [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
+
+5. Deploy — Vercel builds the Vue frontend and runs the Express API as a serverless function
+
+### Vercel notes
+
+- **Database:** SQLite does not work on Vercel. You must set `DATABASE_URL` to a hosted PostgreSQL instance.
+- **Mix uploads:** Without Blob storage, DJs can still post mixes using an external audio URL (SoundCloud, Mixcloud, etc.). Add `BLOB_READ_WRITE_TOKEN` to enable direct file uploads.
+- **API routes:** All `/api/*` requests are handled by the serverless function in `api/index.js`.
+
+## Terraform (Optional Self-Hosted DB)
+
+Provision PostgreSQL and upload volumes on your own VPS:
 
 ```bash
 cd terraform
@@ -58,19 +79,7 @@ terraform init
 terraform apply
 ```
 
-Set the output `database_url` as `DATABASE_URL` in your deployment environment.
-
-## Deploy to Vessl
-
-1. Connect your GitHub repo in the [Vessl dashboard](https://vessl.sh/)
-2. Add your VPS via SSH
-3. Set environment variables:
-   - `JWT_SECRET` — strong random secret
-   - `DATABASE_URL` — from Terraform output (or use SQLite for small setups)
-   - `PORT` — `3000`
-4. Push to your configured branch — Vessl auto-builds via Nixpacks
-
-The root `nixpacks.toml` and `Dockerfile` are both supported.
+Use the output `database_url` as `DATABASE_URL` in Vercel or Docker.
 
 ## API Endpoints
 
@@ -90,9 +99,10 @@ The root `nixpacks.toml` and `Dockerfile` are both supported.
 tripship/
 ├── frontend/          Vue 3 SPA
 ├── backend/           Express API
-├── terraform/         Infrastructure as code
-├── Dockerfile         Production container
-├── nixpacks.toml      Vessl build config
+├── api/               Vercel serverless entry
+├── terraform/         Infrastructure as code (optional)
+├── vercel.json        Vercel deployment config
+├── Dockerfile         Docker production build
 └── docker-compose.yml Local full stack
 ```
 

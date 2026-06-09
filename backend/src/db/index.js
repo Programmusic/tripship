@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const usePostgres = !!process.env.DATABASE_URL
+const usePostgres = !!process.env.DATABASE_URL || !!process.env.VERCEL
 
 let db
 
@@ -115,7 +115,14 @@ async function initPostgres() {
 
 export async function getDb() {
   if (!db) {
-    db = usePostgres ? await initPostgres() : initSqlite()
+    if (usePostgres) {
+      if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL is required on Vercel. Use Vercel Postgres, Neon, or Supabase.')
+      }
+      db = await initPostgres()
+    } else {
+      db = initSqlite()
+    }
   }
   return db
 }

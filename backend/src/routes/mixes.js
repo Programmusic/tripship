@@ -7,19 +7,22 @@ import { getDb } from '../db/index.js'
 import { requireAuth, requireDj } from '../middleware/auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const isVercel = !!process.env.VERCEL
 const uploadsDir = path.join(__dirname, '../../uploads')
 
-if (!fs.existsSync(uploadsDir)) {
+if (!isVercel && !fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
 
-const storage = multer.diskStorage({
-  destination: uploadsDir,
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`
-    cb(null, `${unique}${path.extname(file.originalname)}`)
-  },
-})
+const storage = isVercel
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: uploadsDir,
+      filename: (_req, file, cb) => {
+        const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`
+        cb(null, `${unique}${path.extname(file.originalname)}`)
+      },
+    })
 
 const upload = multer({
   storage,
@@ -36,7 +39,12 @@ const upload = multer({
 const router = Router()
 
 function formatMix(row) {
-  const audioUrl = row.audio_url || (row.audio_path ? `/uploads/${path.basename(row.audio_path)}` : null)
+  let audioUrl = row.audio_url
+  if (!audioUrl && row.audio_path) {
+    audioUrl = row.audio_path.startsWith('http')
+      ? row.audio_path
+      : `/uploads/${path.basename(row.audio_path)}`
+  }
   return {
     id: row.id,
     userId: row.user_id,
@@ -48,6 +56,24 @@ function formatMix(row) {
     audioUrl,
     createdAt: row.created_at,
   }
+}
+
+async function storeAudioFile(file) {
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const { put } = await import('@vercel/blob')
+    const filename = `mixes/${Date.now()}-${file.originalname}`
+    const blob = await put(filename, file.buffer, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    })
+    return { url: blob.url, path: null }
+  }
+
+  if (isVercel) {
+    throw new Error('File uploads on Vercel require BLOB_READ_WRITE_TOKEN. Link an audio URL instead, or add Vercel Blob storage.')
+  }
+
+  return { url: null, path: file.path }
 }
 
 router.get('/', async (req, res) => {
@@ -75,10 +101,20 @@ router.post('/', requireAuth, requireDj, upload.single('audio'), async (req, res
     return res.status(400).json({ error: 'Mix title is required' })
   }
 
-  const audioPath = req.file ? req.file.path : null
-  const externalUrl = audioUrl?.trim() || null
+  let storedUrl = audioUrl?.trim() || null
+  let audioPath = null
 
-  if (!audioPath && !externalUrl) {
+  if (req.file) {
+    try {
+      const stored = await storeAudioFile(req.file)
+      storedUrl = stored.url || storedUrl
+      audioPath = stored.path
+    } catch (err) {
+      return res.status(400).json({ error: err.message })
+    }
+  }
+
+  if (!storedUrl && !audioPath) {
     return res.status(400).json({ error: 'Provide an audio file or URL' })
   }
 
@@ -91,7 +127,7 @@ router.post('/', requireAuth, requireDj, upload.single('audio'), async (req, res
       const result = await db.query(
         `INSERT INTO mixes (user_id, title, description, genre, duration, audio_url, audio_path)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [req.user.id, title.trim(), description || null, genre || null, duration || null, externalUrl, audioPath]
+        [req.user.id, title.trim(), description || null, genre || null, duration || null, storedUrl, audioPath]
       )
       const userResult = await db.query('SELECT display_name FROM users WHERE id = $1', [req.user.id])
       mix = { ...result.rows[0], dj_name: userResult.rows[0].display_name }
@@ -99,7 +135,7 @@ router.post('/', requireAuth, requireDj, upload.single('audio'), async (req, res
       const result = await db.query(
         `INSERT INTO mixes (user_id, title, description, genre, duration, audio_url, audio_path)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [req.user.id, title.trim(), description || null, genre || null, duration || null, externalUrl, audioPath]
+        [req.user.id, title.trim(), description || null, genre || null, duration || null, storedUrl, audioPath]
       )
       mix = db.prepare(
         `SELECT m.*, u.display_name AS dj_name
