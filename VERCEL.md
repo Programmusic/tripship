@@ -19,11 +19,11 @@ Go to **[vercel.com/new](https://vercel.com/new)** and sign in with **GitHub**.
 |---------|-------|
 | Framework Preset | **Vite** |
 | Root Directory | `./` (repo root) |
-| Install Command | `npm install --prefix frontend` |
+| Install Command | `npm install --prefix frontend --include=dev` |
 | Build Command | `npm run build --prefix frontend` |
 | Output Directory | `frontend/dist` |
 
-**Important:** Do NOT use `npm install` at repo root — that tries to build the backend and fails on Vercel. The commands above install **only the Vue/Vite frontend**.
+**Important:** The `--include=dev` flag is required — Vercel sets `NODE_ENV=production` which skips Vite otherwise. Do NOT run `npm install` at repo root.
 
 ### 4. Deploy
 
