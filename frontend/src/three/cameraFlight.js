@@ -30,17 +30,17 @@ export function createDoorFlight(camera, controls, ship, location) {
     .add(new THREE.Vector3(0, 0.55, 0))
 
   const peekPos = doorWorld.clone()
-    .add(forward.clone().multiplyScalar(0.75))
-    .add(new THREE.Vector3(0, 0.32, 0))
+    .add(forward.clone().multiplyScalar(0.55))
+    .add(new THREE.Vector3(0, 0.38, 0))
 
   const insidePos = doorWorld.clone()
-    .add(forward.clone().multiplyScalar(0.25))
-    .add(new THREE.Vector3(0, 0.28, 0))
+    .add(forward.clone().multiplyScalar(0.2))
+    .add(new THREE.Vector3(0, 0.32, 0))
 
-  const doorLookAt = doorWorld.clone().add(new THREE.Vector3(0, 0.28, 0))
+  const doorLookAt = doorWorld.clone().add(new THREE.Vector3(0, 0.3, 0))
   const insideLookAt = doorWorld.clone()
-    .add(forward.clone().multiplyScalar(-0.5))
-    .add(new THREE.Vector3(0, 0.35, 0))
+    .add(forward.clone().multiplyScalar(-0.65))
+    .add(new THREE.Vector3(0, 0.4, 0))
 
   return {
     startPos: camera.position.clone(),

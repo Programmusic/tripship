@@ -98,7 +98,12 @@ import {
   startEnterFlight,
 } from '@/three/cameraFlight.js'
 import { FPSController } from '@/three/interiors/fpsController.js'
-import { getOrBuildInterior, enterInteriorMode, exitInteriorMode } from '@/three/interiors/interiorManager.js'
+import {
+  getOrBuildInterior,
+  enterInteriorMode,
+  exitInteriorMode,
+  createInteriorLighting,
+} from '@/three/interiors/interiorManager.js'
 import { animateInterior, findInteractable, isNearExit } from '@/three/interiors/interiorScenes.js'
 
 const router = useRouter()
@@ -120,7 +125,7 @@ let activeFlight = null
 let raycaster, pointer
 let labelElements = []
 let savedOrbitPos, savedOrbitTarget
-let stars
+let stars, dock, interiorLighting, bloomPass
 
 function init() {
   const container = containerRef.value
@@ -163,12 +168,15 @@ function init() {
   stars = createStarLayer(isMobile.value ? 1500 : 3000, 80, 0.1, 0xffffff, 0.8)
   scene.add(stars)
 
-  const dock = new THREE.Mesh(
+  dock = new THREE.Mesh(
     new THREE.CylinderGeometry(5, 5.5, 0.15, 48),
     new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.9 })
   )
   dock.position.y = -0.85
   scene.add(dock)
+
+  interiorLighting = createInteriorLighting(scene)
+  interiorLighting.visible = false
 
   ship = buildGalleon()
   ship.rotation.y = Math.PI / 4
@@ -204,12 +212,13 @@ function init() {
 
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
-  composer.addPass(new UnrealBloomPass(
+  bloomPass = new UnrealBloomPass(
     new THREE.Vector2(width, height),
     isMobile.value ? 0.9 : 1.35,
     0.5,
     0.15
-  ))
+  )
+  composer.addPass(bloomPass)
 
   raycaster = new THREE.Raycaster()
   pointer = new THREE.Vector2()
@@ -265,9 +274,16 @@ function startInteriorWalk() {
     interiorPeekRooms: interiorRooms,
     labelElements,
     interiorData,
+    lightingGroup: interiorLighting,
   })
   interiorMeta = interiorData.meta
   stars.visible = false
+  dock.visible = false
+  renderer.toneMappingExposure = 1.45
+  if (bloomPass) {
+    bloomPass.strength = isMobile.value ? 0.5 : 0.75
+    bloomPass.threshold = 0.35
+  }
 
   fpsController.bounds = interiorMeta.bounds
   fpsController.enable(interiorMeta.spawn, interiorMeta.spawnYaw)
@@ -292,10 +308,17 @@ function exitInterior() {
       hotspots,
       labelElements,
       interiorGroup,
+      lightingGroup: interiorLighting,
     })
     interiorGroup = null
     interiorMeta = null
     stars.visible = true
+    dock.visible = true
+    renderer.toneMappingExposure = 1.15
+    if (bloomPass) {
+      bloomPass.strength = isMobile.value ? 0.9 : 1.35
+      bloomPass.threshold = 0.15
+    }
 
     if (savedOrbitPos) camera.position.copy(savedOrbitPos)
     if (savedOrbitTarget) controls.target.copy(savedOrbitTarget)
@@ -539,11 +562,11 @@ onUnmounted(cleanup)
 }
 
 .explorer__vignette--peek {
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(2, 4, 8, 0.85) 100%);
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(2, 4, 8, 0.55) 100%);
 }
 
 .explorer__vignette--interior {
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 8, 16, 0.7) 100%);
+  background: radial-gradient(ellipse at center, transparent 65%, rgba(10, 8, 16, 0.4) 100%);
 }
 
 .explorer__chrome {

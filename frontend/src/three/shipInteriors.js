@@ -1,13 +1,13 @@
 import * as THREE from 'three'
 
-function makeRoomMaterial(color, emissive = 0x000000, emissiveIntensity = 0.3) {
+function makeRoomMaterial(color, emissive = 0x000000, emissiveIntensity = 0.45) {
   return new THREE.MeshStandardMaterial({
     color,
     roughness: 0.85,
     metalness: 0.05,
     emissive,
     emissiveIntensity,
-    side: THREE.BackSide,
+    side: THREE.DoubleSide,
   })
 }
 
@@ -49,8 +49,8 @@ function createRoomBox(width, height, depth, wallColor, accentColor) {
   ceiling.position.y = height
   room.add(ceiling)
 
-  const light = new THREE.PointLight(accentColor, 3, 6)
-  light.position.set(0, height * 0.7, -depth * 0.3)
+  const light = new THREE.PointLight(accentColor, 12, 10)
+  light.position.set(0, height * 0.7, 0)
   room.add(light)
   room.userData.interiorLight = light
 
@@ -198,8 +198,8 @@ export function createShipInteriors(ship, locations) {
     const door = createDoorFrame(loc.color)
     entry.add(door)
 
-    const room = createRoomBox(0.9, 0.85, 0.75, theme.wall, theme.accent)
-    room.position.set(0, 0, -0.35)
+    const room = createRoomBox(1.4, 1.1, 1.2, theme.wall, theme.accent)
+    room.position.set(0, 0, -0.55)
     room.scale.setScalar(0.01)
     room.visible = false
     theme.decorate(room)
@@ -221,18 +221,18 @@ export function showInteriorPeek(roomEntry, progress) {
   const room = roomEntry.userData.room
   if (!room) return
 
-  room.visible = progress > 0.05
-  const scale = Math.min(1, progress) * 1.2
+  room.visible = progress > 0.02
+  const scale = 0.4 + Math.min(1, progress) * 0.6
   room.scale.setScalar(Math.max(0.01, scale))
 
   const glow = roomEntry.userData.doorGlow
   if (glow) {
-    glow.material.opacity = 0.15 + progress * 0.45
+    glow.material.opacity = 0.25 + progress * 0.55
   }
 
   const light = room.userData.interiorLight
   if (light) {
-    light.intensity = 2 + progress * 4
+    light.intensity = 8 + progress * 12
   }
 }
 

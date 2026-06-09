@@ -12,6 +12,20 @@ export function getOrBuildInterior(location) {
   return scene
 }
 
+export function createInteriorLighting(scene) {
+  const group = new THREE.Group()
+  group.name = 'interior-lighting'
+
+  const hemi = new THREE.HemisphereLight(0x8899bb, 0x1a1410, 0.85)
+  group.add(hemi)
+
+  const ambient = new THREE.AmbientLight(0x334455, 0.55)
+  group.add(ambient)
+
+  scene.add(group)
+  return group
+}
+
 export function enterInteriorMode({
   scene,
   ship,
@@ -19,6 +33,7 @@ export function enterInteriorMode({
   interiorPeekRooms,
   labelElements,
   interiorData,
+  lightingGroup,
 }) {
   ship.visible = false
   hotspots.visible = false
@@ -29,8 +44,10 @@ export function enterInteriorMode({
     el.style.pointerEvents = 'none'
   })
 
-  scene.fog = new THREE.FogExp2(0x0a0810, 0.045)
-  scene.background = new THREE.Color(0x0a0810)
+  scene.fog = new THREE.FogExp2(0x12101a, 0.018)
+  scene.background = new THREE.Color(0x12101a)
+
+  if (lightingGroup) lightingGroup.visible = true
 
   const { group } = interiorData
   group.visible = true
@@ -45,10 +62,13 @@ export function exitInteriorMode({
   hotspots,
   labelElements,
   interiorGroup,
+  lightingGroup,
 }) {
   if (interiorGroup) {
     scene.remove(interiorGroup)
   }
+
+  if (lightingGroup) lightingGroup.visible = false
 
   ship.visible = true
   hotspots.visible = true
