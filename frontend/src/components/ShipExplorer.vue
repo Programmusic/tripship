@@ -30,6 +30,9 @@
         <template v-else-if="viewMode === 'peek'">
           <span>Peep inside</span><span>·</span><span>Enter when ready</span>
         </template>
+        <template v-else-if="viewMode === 'interior' && selected?.id === 'mixes'">
+          <span>☠ DJ Krakenbyte on the decks</span><span>·</span><span>E to open mixes</span>
+        </template>
         <template v-else-if="viewMode === 'interior'">
           <span>WASD move</span><span>·</span><span>Mouse look</span><span>·</span><span>E interact</span>
         </template>

@@ -31,7 +31,7 @@ export const SHIP_LOCATIONS = [
   {
     id: 'mixes',
     label: 'Deck Sessions',
-    desc: 'Bass bins & DJ mixes rigged to the masts',
+    desc: 'DJ Krakenbyte — mutant AI pirate on the rig, spinnin\' bass unto the stars',
     route: '/mixes',
     position: new THREE.Vector3(0.95, 0.55, 0.35),
     interiorRotation: Math.PI * 0.15,

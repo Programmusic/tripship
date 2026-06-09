@@ -7,28 +7,33 @@ import {
   woodMat,
   neonMat,
 } from './buildRoom.js'
+import {
+  populateDeckSessions,
+  populateCaptainsCabin,
+  populateArtifacts,
+  populateMemories,
+  populateTheList,
+} from './roomContent.js'
 
 const ROOM_SIZE = { w: 9, d: 11, h: 3.4 }
+const BPM = 128
+const BEAT = BPM / 60
 
 function buildCaptainsCabin(accent) {
   const { w, d, h } = ROOM_SIZE
   const room = buildRoomShell(w, d, h, { accent, wallColor: 0x1a1410, floorColor: 0x2a1a0a })
 
-  const desk = addMesh(room, new THREE.BoxGeometry(2.2, 0.85, 1.0), woodMat(0x3a2818), [0, 0.425, -d / 2 + 1.8])
+  addMesh(room, new THREE.BoxGeometry(2.2, 0.85, 1.0), woodMat(0x3a2818), [0, 0.425, -d / 2 + 1.8])
   addMesh(room, new THREE.BoxGeometry(2.0, 0.04, 0.8), woodMat(0x5a4030), [0, 0.87, -d / 2 + 1.8])
 
   for (let i = 0; i < 4; i++) {
     addMesh(
       room,
       new THREE.PlaneGeometry(0.9, 1.1),
-      new THREE.MeshStandardMaterial({ color: 0xe8dcc8, roughness: 0.95 }),
-      [-2.5 + i * 1.6, 1.6, -d / 2 + 0.08],
-      [0, 0, 0]
+      new THREE.MeshStandardMaterial({ color: 0xe8dcc8, roughness: 0.95, side: THREE.DoubleSide }),
+      [-2.5 + i * 1.6, 1.6, -d / 2 + 0.08]
     )
   }
-
-  addMesh(room, new THREE.CylinderGeometry(0.35, 0.4, 0.6, 16), woodMat(0x4a3020), [2.5, 0.3, -d / 2 + 2.2])
-  addMesh(room, new THREE.SphereGeometry(0.28, 16, 12), neonMat(accent, 0.6), [2.5, 0.75, -d / 2 + 2.2])
 
   addMesh(room, new THREE.BoxGeometry(1.8, 2.2, 0.35), woodMat(0x3a2818), [-w / 2 + 0.55, 1.1, -1])
   for (let row = 0; row < 3; row++) {
@@ -36,14 +41,11 @@ function buildCaptainsCabin(accent) {
       addMesh(
         room,
         new THREE.BoxGeometry(0.12, 0.28, 0.08),
-        new THREE.MeshStandardMaterial({ color: [0x8b0000, 0x1a3a5c, 0x2a4a2a][row % 3] }),
+        new THREE.MeshStandardMaterial({ color: [0x8b0000, 0x1a3a5c, 0x2a4a2a][row % 3], side: THREE.DoubleSide }),
         [-w / 2 + 0.35, 0.5 + row * 0.35, -1.5 + col * 0.35]
       )
     }
   }
-
-  addMesh(room, new THREE.BoxGeometry(0.7, 1.0, 0.7), woodMat(0x4a3020), [1.8, 0.5, 1.5])
-  addMesh(room, new THREE.BoxGeometry(0.65, 0.08, 0.65), woodMat(0x5a4030), [1.8, 1.02, 1.5])
 
   const wheel = addMesh(room, new THREE.TorusGeometry(0.5, 0.06, 8, 24), neonMat(accent, 0.5), [0, 1.8, -d / 2 + 0.2], [0, 0, 0])
   for (let i = 0; i < 8; i++) {
@@ -58,10 +60,7 @@ function buildCaptainsCabin(accent) {
   }
   wheel.rotation.x = Math.PI / 2
 
-  const lantern = new THREE.PointLight(accent, 8, 10)
-  lantern.position.set(0, h - 0.4, 0)
-  room.add(lantern)
-
+  populateCaptainsCabin(room, w, d)
   createTerminal(room, [0, 0, -d / 2 + 3.2], "Captain's Log", accent)
 
   return { room, meta: createRoomMeta(w, d) }
@@ -93,24 +92,12 @@ function buildArtifacts(accent) {
       opacity: 0.4,
       roughness: 0.1,
       metalness: 0.8,
+      side: THREE.DoubleSide,
     }), [0, 0, 0.31])
     addMesh(caseG, new THREE.PlaneGeometry(1.0, 1.2), neonMat(posterColors[i], 0.5), [0, 0.1, 0.15])
   }
 
-  addMesh(room, new THREE.BoxGeometry(3, 0.5, 1.2), woodMat(0x3a2818), [0, 0.25, d / 2 - 2])
-  for (let i = 0; i < 5; i++) {
-    addMesh(
-      room,
-      new THREE.BoxGeometry(0.5, 0.35, 0.02),
-      neonMat(posterColors[i + 1], 0.4),
-      [-2 + i * 1, 0.55, d / 2 - 2.6]
-    )
-  }
-
-  const uv = new THREE.PointLight(0xff00ff, 6, 8)
-  uv.position.set(0, h - 0.3, -2)
-  room.add(uv)
-
+  populateArtifacts(room, w, d)
   createTerminal(room, [0, 0, -d / 2 + 3.5], 'Vault Terminal', accent)
 
   return { room, meta: createRoomMeta(w, d) }
@@ -133,6 +120,7 @@ function buildMemories(accent) {
         color: [0x224466, 0x442266, 0x226644, 0x664422, 0x334455, 0x553344][i],
         emissive: accent,
         emissiveIntensity: 0.15,
+        side: THREE.DoubleSide,
       }),
       [0, 0, 0.05]
     )
@@ -143,19 +131,11 @@ function buildMemories(accent) {
   }
 
   for (let i = 0; i < 5; i++) {
-    const orb = addMesh(
-      room,
-      new THREE.SphereGeometry(0.12, 12, 12),
-      neonMat(accent, 1.2),
-      [-2 + i * 1, 0.7, -1]
-    )
+    const orb = addMesh(room, new THREE.SphereGeometry(0.12, 12, 12), neonMat(accent, 1.2), [-2 + i * 1, 0.7, -1])
     orb.userData.pulse = i * 0.7
   }
 
-  const mist = new THREE.PointLight(accent, 5, 12)
-  mist.position.set(0, 1.5, 0)
-  room.add(mist)
-
+  populateMemories(room, d)
   createTerminal(room, [0, 0, -d / 2 + 3.2], 'Tale Terminal', accent)
 
   return { room, meta: createRoomMeta(w, d) }
@@ -163,37 +143,14 @@ function buildMemories(accent) {
 
 function buildMixes(accent) {
   const { w, d, h } = ROOM_SIZE
-  const room = buildRoomShell(w, d, h, { accent, wallColor: 0x140a18, floorColor: 0x1a0a1a })
+  const room = buildRoomShell(w, d, h, {
+    accent,
+    wallColor: 0x0a0614,
+    floorColor: 0x12081a,
+  })
 
-  const pink = neonMat(0xff00ff, 1.2)
-  const cyan = neonMat(0x00ffcc, 1.2)
-
-  addMesh(room, new THREE.BoxGeometry(2.5, 0.9, 1.2), woodMat(0x2a1a2a), [0, 0.45, -d / 2 + 2.5])
-  addMesh(room, new THREE.BoxGeometry(0.8, 0.05, 0.5), pink, [-0.5, 0.93, -d / 2 + 2.5])
-  addMesh(room, new THREE.BoxGeometry(0.8, 0.05, 0.5), cyan, [0.5, 0.93, -d / 2 + 2.5])
-
-  for (let i = 0; i < 2; i++) {
-    addMesh(room, new THREE.CylinderGeometry(0.35, 0.4, 1.6, 12), pink, [-2.5 + i * 5, 0.8, 0])
-    addMesh(room, new THREE.CylinderGeometry(0.5, 0.55, 0.15, 16), woodMat(0x1a1a1a), [-2.5 + i * 5, 0.1, 0])
-  }
-
-  for (let i = 0; i < 6; i++) {
-    addMesh(
-      room,
-      new THREE.BoxGeometry(0.35, 0.35, 0.35),
-      new THREE.MeshStandardMaterial({ color: [0x111111, 0x222222, 0x1a0a1a][i % 3] }),
-      [-2 + (i % 3) * 2, 0.175, d / 2 - 2 - Math.floor(i / 3) * 1.2]
-    )
-  }
-
-  addMesh(room, new THREE.TorusGeometry(0.6, 0.04, 8, 32), cyan, [0, 2.2, -d / 2 + 0.3], [Math.PI / 2, 0, 0])
-
-  const strobe = new THREE.PointLight(0xff00ff, 10, 14)
-  strobe.position.set(0, h - 0.2, -2)
-  room.add(strobe)
-  room.userData.strobe = strobe
-
-  createTerminal(room, [0, 0, -d / 2 + 4], 'Deck Rig', accent)
+  populateDeckSessions(room, w, d, h)
+  createTerminal(room, [w / 2 - 1.2, 0, -d / 2 + 4], 'Deck Rig', accent)
 
   return { room, meta: createRoomMeta(w, d) }
 }
@@ -206,7 +163,7 @@ function buildTheList(accent) {
   addMesh(
     room,
     new THREE.PlaneGeometry(3.8, 1.2),
-    new THREE.MeshStandardMaterial({ color: 0xe8dcc8, roughness: 0.95 }),
+    new THREE.MeshStandardMaterial({ color: 0xe8dcc8, roughness: 0.95, side: THREE.DoubleSide }),
     [0, 0.82, -d / 2 + 3],
     [-Math.PI / 2, 0, 0]
   )
@@ -220,19 +177,10 @@ function buildTheList(accent) {
     )
   }
 
-  addMesh(room, new THREE.ConeGeometry(0.03, 0.25, 6), neonMat(0xc9a227, 0.6), [1.5, 0.88, -d / 2 + 2.8], [0, 0, -0.6])
-  addMesh(room, new THREE.CylinderGeometry(0.08, 0.08, 0.06), woodMat(0x3a2818), [1.3, 0.81, -d / 2 + 2.9])
-
   addMesh(room, new THREE.BoxGeometry(0.6, 1.8, 0.6), woodMat(0x3a2818), [-w / 2 + 0.8, 0.9, 0])
   addMesh(room, new THREE.BoxGeometry(0.6, 1.8, 0.6), woodMat(0x3a2818), [w / 2 - 0.8, 0.9, 0])
 
-  const seal = addMesh(room, new THREE.CylinderGeometry(0.4, 0.4, 0.06, 24), neonMat(accent, 0.8), [0, 1.5, -d / 2 + 0.15])
-  seal.rotation.x = Math.PI / 2
-
-  const candle = new THREE.PointLight(accent, 6, 8)
-  candle.position.set(0, 1.2, -d / 2 + 3)
-  room.add(candle)
-
+  populateTheList(room, d)
   createTerminal(room, [0, 0, -d / 2 + 4.5], 'Guest Ledger', accent)
 
   return { room, meta: createRoomMeta(w, d) }
@@ -270,16 +218,104 @@ function collectInteractables(group) {
   group.userData.interactables = interactables
 }
 
+function animateDJ(dj, time, beat) {
+  if (!dj) return
+  if (dj.userData.baseY === undefined) dj.userData.baseY = dj.position.y
+  dj.position.y = dj.userData.baseY + Math.sin(beat) * 0.07
+  dj.traverse((obj) => {
+    if (obj.userData.animType === 'jaw') {
+      obj.rotation.x = Math.sin(beat * 2) * 0.15
+    }
+    if (obj.userData.animType === 'armL') {
+      obj.rotation.z = 0.3 + Math.sin(beat * 1.5) * 0.25
+    }
+    if (obj.userData.animType === 'tentacle') {
+      obj.rotation.z = -0.5 + Math.sin(beat * 2 + 1) * 0.35
+      obj.rotation.x = 0.2 + Math.cos(beat * 3) * 0.15
+    }
+    if (obj.userData.animType === 'halo') {
+      obj.rotation.z = time * 0.8
+    }
+    if (obj.userData.pulse !== undefined && obj.material?.emissiveIntensity !== undefined) {
+      obj.material.emissiveIntensity = 2 + Math.sin(beat * 4) * 1.5
+    }
+  })
+  if (dj.userData.eyeLight) {
+    dj.userData.eyeLight.intensity = 3 + Math.sin(beat * 4) * 2
+  }
+}
+
+function animateRig(rig, time) {
+  if (!rig) return
+  rig.traverse((obj) => {
+    if (obj.userData.spin) {
+      obj.rotation.y = time * 2.8
+    }
+    if (obj.userData.waveform !== undefined) {
+      const phase = obj.userData.waveform
+      obj.material.emissiveIntensity = 0.8 + Math.sin(time * 6 + phase) * 0.6
+    }
+    if (obj.userData.animType === 'sign') {
+      obj.material.emissiveIntensity = 1.2 + Math.sin(time * 4) * 0.5
+    }
+    if (obj.userData.laserIndex !== undefined) {
+      obj.rotation.z = Math.sin(time * 2 + obj.userData.laserIndex * 1.2) * 0.4
+      obj.material.opacity = 0.2 + Math.abs(Math.sin(time * 3 + obj.userData.laserIndex)) * 0.25
+    }
+    if (obj.userData.animType === 'bassStack' && obj.userData.stackLight) {
+      obj.userData.stackLight.intensity = 6 + Math.sin(time * BEAT * Math.PI * 2) * 4
+    }
+    if (obj.userData.pulse !== undefined && obj.isMesh) {
+      const s = 1 + Math.sin(time * BEAT * Math.PI * 2 + obj.userData.pulse) * 0.12
+      obj.scale.set(s, s, s)
+    }
+  })
+}
+
 export function animateInterior(group, time) {
+  const beat = time * BEAT * Math.PI * 2
+
   group?.traverse((obj) => {
-    if (obj.userData.pulse !== undefined) {
+    if (obj.userData.pulse !== undefined && !obj.userData.animType) {
       const s = 1 + Math.sin(time * 3 + obj.userData.pulse) * 0.2
       obj.scale.setScalar(s)
     }
+    if (obj.userData.animType === 'ghost') {
+      obj.position.y = 1.8 + Math.sin(time * 0.8) * 0.08
+      obj.rotation.y = Math.sin(time * 0.3) * 0.05
+    }
+    if (obj.userData.animType === 'quillBot') {
+      obj.rotation.y = Math.sin(time * 0.5) * 0.1
+    }
+    if (obj.userData.animType === 'quillArm') {
+      obj.rotation.x = 0.5 + Math.sin(time * 3) * 0.4
+    }
+    if (obj.userData.animType === 'holoGlobe') {
+      obj.rotation.y = time * 0.5
+    }
+    if (obj.userData.animType === 'campfire') {
+      obj.children.forEach((c, i) => {
+        if (c.geometry?.type === 'ConeGeometry') {
+          c.scale.y = 1 + Math.sin(time * 5 + i) * 0.2
+        }
+      })
+    }
   })
+
+  animateDJ(group?.userData?.dj, time, beat)
+  animateRig(group?.userData?.rig, time)
+
   const strobe = group?.userData?.strobe
-  if (strobe) {
-    strobe.intensity = 6 + Math.sin(time * 8) * 4
+  const strobeCyan = group?.userData?.strobeCyan
+  if (strobe && strobeCyan) {
+    const onBeat = Math.sin(beat) > 0
+    strobe.intensity = onBeat ? 22 : 8
+    strobeCyan.intensity = onBeat ? 8 : 18
+  }
+
+  const fireLight = group?.userData?.fireLight
+  if (fireLight) {
+    fireLight.intensity = 4 + Math.sin(time * 4) * 2
   }
 }
 
