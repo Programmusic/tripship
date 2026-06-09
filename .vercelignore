@@ -1,0 +1,9 @@
+api
+backend
+terraform
+docker-compose.yml
+Dockerfile
+.env
+.env.local
+backend/data
+backend/uploads

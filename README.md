@@ -15,6 +15,14 @@ npm run design
 
 Open http://localhost:5173 — you'll see the full Trip Ship UI with sample memories and mixes.
 
+## Deploy live on Vercel (iterate from your phone)
+
+1. Push this repo to GitHub
+2. Import at [vercel.com/new](https://vercel.com/new) → connect `Programmusic/tripship`
+3. Tap **Deploy** (settings auto-load from `vercel.json`)
+
+Every push redeploys. See **[VERCEL.md](./VERCEL.md)** for the full mobile setup guide.
+
 ## Features
 
 - **User accounts** — Register, login, and manage your crew profile
@@ -58,24 +66,18 @@ App runs at http://localhost:3000
 
 ## Deploy to Vercel
 
-1. Push this repo to GitHub
-2. Import the project in the [Vercel dashboard](https://vercel.com/new)
-3. Vercel auto-detects settings from `vercel.json`
-4. Add environment variables in Project Settings → Environment Variables:
+The repo is configured for **frontend-only** deploys with demo data — no env vars required to start.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | Yes | Strong random secret for auth tokens |
-| `DATABASE_URL` | Yes | PostgreSQL connection string ([Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres), [Neon](https://neon.tech), or Supabase) |
-| `BLOB_READ_WRITE_TOKEN` | No | Enables DJ mix file uploads via [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
+```bash
+# Settings (already in vercel.json)
+Install:  npm install
+Build:    npm run build -w frontend
+Output:   frontend/dist
+```
 
-5. Deploy — Vercel builds the Vue frontend and runs the Express API as a serverless function
+Push to GitHub → Vercel auto-deploys. Full mobile guide: **[VERCEL.md](./VERCEL.md)**
 
-### Vercel notes
-
-- **Database:** SQLite does not work on Vercel. You must set `DATABASE_URL` to a hosted PostgreSQL instance.
-- **Mix uploads:** Without Blob storage, DJs can still post mixes using an external audio URL (SoundCloud, Mixcloud, etc.). Add `BLOB_READ_WRITE_TOKEN` to enable direct file uploads.
-- **API routes:** All `/api/*` requests are handled by the serverless function in `api/index.js`.
+When Cloud Functions + Firestore are added, env vars will be configured via Terraform.
 
 ## Terraform (Optional Self-Hosted DB)
 
