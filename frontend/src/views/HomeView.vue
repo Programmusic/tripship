@@ -1,127 +1,132 @@
 <template>
   <div class="home">
     <section class="hero">
-      <div class="hero__badge">Est. 1994</div>
+      <div class="hero__badge">☠ Unsocial Media ☠</div>
       <h1 class="hero__title">Trip Ship</h1>
-      <p class="hero__subtitle">The 90s sound system that never docked</p>
+      <p class="hero__subtitle">If yer name ain't on the list, ye ain't comin' in</p>
+      <PirateShip />
       <BassVisualizer />
       <p class="hero__desc">
-        Rewind to warehouse raves, stacked bass bins, and pirate radio energy.
-        Share your memories, catch fresh DJ mixes, and ride the wave with the crew.
+        Ahoy! This be the 90s sound system that never docked. A private crew for mates from back in the day —
+        share tales from the dancefloor, plunder the <strong>Aaaarrifacts</strong>, catch DJ mixes,
+        and read the <strong>Captain's Cabin</strong>. No algorithms. No randos. Just family.
       </p>
       <div class="hero__actions">
-        <RouterLink to="/memories" class="btn btn--pink">Browse Memories</RouterLink>
-        <RouterLink to="/mixes" class="btn">DJ Mixes</RouterLink>
+        <RouterLink to="/register" class="btn btn--pink">Get On The List</RouterLink>
+        <RouterLink to="/aaaarrifacts" class="btn">Browse Aaaarrifacts</RouterLink>
       </div>
     </section>
 
+    <p class="pirate-divider">☠ ⚓ ☠</p>
+
     <section v-if="isDemoMode" class="preview">
-      <h2 class="preview__heading">From the vault</h2>
+      <h2 class="preview__heading">From the Memory Hold</h2>
       <div class="preview__grid">
         <MemoryCard v-for="memory in previewMemories" :key="memory.id" :memory="memory" />
       </div>
-      <RouterLink to="/memories" class="preview__more">See all memories →</RouterLink>
-    </section>
-
-    <section v-if="isDemoMode" class="preview preview--mixes">
-      <h2 class="preview__heading">On the decks</h2>
-      <div class="preview__mixes">
-        <MixCard v-for="mix in previewMixes" :key="mix.id" :mix="mix" />
-      </div>
-      <RouterLink to="/mixes" class="preview__more">All DJ mixes →</RouterLink>
+      <RouterLink to="/memories" class="preview__more">All crew tales →</RouterLink>
     </section>
 
     <section class="features">
       <div class="feature card">
-        <div class="feature__icon">📼</div>
-        <h2>Share Memories</h2>
-        <p>Drop your stories from the dancefloor — free parties, sound clashes, and those nights the bass never stopped.</p>
-        <RouterLink to="/memories" class="feature__link">View the vault →</RouterLink>
+        <div class="feature__icon">📜</div>
+        <h2>Aaaarrifacts</h2>
+        <p>Old fliers, posters, tickets — buried treasure from warehouse raves and sound clashes. Upload yer loot.</p>
+        <RouterLink to="/aaaarrifacts" class="feature__link">Plunder the vault →</RouterLink>
+      </div>
+      <div class="feature card">
+        <div class="feature__icon">🏴‍☠️</div>
+        <h2>Captain's Cabin</h2>
+        <p>Scribblin's from Cap'n Pete. News, voyages, and orders from the helm about what's happenin' now.</p>
+        <RouterLink to="/captains-cabin" class="feature__link">Enter the cabin →</RouterLink>
       </div>
       <div class="feature card">
         <div class="feature__icon">🎧</div>
-        <h2>DJ Mixes</h2>
-        <p>Resident selectors upload jungle, dub, garage, and hardcore sessions straight from the decks.</p>
-        <RouterLink to="/mixes" class="feature__link">Tune in →</RouterLink>
+        <h2>Deck Sessions</h2>
+        <p>Selectors upload jungle, dub, garage & hardcore straight from the riggin'. Tune in, me hearties.</p>
+        <RouterLink to="/mixes" class="feature__link">Hoist the tunes →</RouterLink>
       </div>
       <div class="feature card">
-        <div class="feature__icon">🔊</div>
-        <h2>Crew Login</h2>
-        <p>Create your account, build your profile, and connect with the Trip Ship family worldwide.</p>
-        <RouterLink to="/profile" class="feature__link">Your profile →</RouterLink>
+        <div class="feature__icon">📋</div>
+        <h2>The List</h2>
+        <p>Invite yer mates from back in the day. Crew invite crew — that's how Unsocial Media works, arr.</p>
+        <RouterLink to="/the-list" class="feature__link">Manage invites →</RouterLink>
       </div>
     </section>
 
     <section class="stats">
       <div class="stat">
         <span class="stat__num">90s</span>
-        <span class="stat__label">Sound System Era</span>
+        <span class="stat__label">Golden Era</span>
+      </div>
+      <div class="stat">
+        <span class="stat__num">☠</span>
+        <span class="stat__label">Invite Only</span>
       </div>
       <div class="stat">
         <span class="stat__num">∞</span>
         <span class="stat__label">Bass Frequency</span>
-      </div>
-      <div class="stat">
-        <span class="stat__num">24/7</span>
-        <span class="stat__label">Mixes on Deck</span>
       </div>
     </section>
   </div>
 </template>
 
 <script setup>
+import PirateShip from '@/components/PirateShip.vue'
 import BassVisualizer from '@/components/BassVisualizer.vue'
 import MemoryCard from '@/components/MemoryCard.vue'
-import MixCard from '@/components/MixCard.vue'
 import { isDemoMode } from '@/api/client.js'
-import { mockMemories, mockMixes } from '@/demo/mockData.js'
+import { mockMemories } from '@/demo/mockData.js'
 
 const previewMemories = mockMemories.slice(0, 2)
-const previewMixes = mockMixes.slice(0, 2)
 </script>
 
 <style scoped>
 .hero {
   text-align: center;
-  padding: 3rem 0 4rem;
+  padding: 2rem 0 3rem;
 }
 
 .hero__badge {
   display: inline-block;
-  padding: 0.3rem 1rem;
-  border: 1px solid var(--neon-yellow);
-  color: var(--neon-yellow);
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  padding: 0.4rem 1.2rem;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .hero__title {
-  font-size: clamp(4rem, 12vw, 8rem);
-  line-height: 0.9;
-  background: linear-gradient(180deg, var(--neon-pink) 0%, var(--neon-cyan) 100%);
+  font-size: clamp(3.5rem, 11vw, 7rem);
+  line-height: 0.95;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--neon-cyan) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(255, 0, 255, 0.3));
   margin-bottom: 0.5rem;
 }
 
 .hero__subtitle {
   font-family: var(--font-display);
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
-  color: var(--neon-cyan);
-  letter-spacing: 0.15em;
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  color: var(--neon-pink);
+  letter-spacing: 0.08em;
   margin-bottom: 0.5rem;
+  font-style: italic;
 }
 
 .hero__desc {
-  max-width: 600px;
+  max-width: 620px;
   margin: 0 auto 2rem;
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.8;
+}
+
+.hero__desc strong {
+  color: var(--gold);
 }
 
 .hero__actions {
@@ -132,16 +137,12 @@ const previewMixes = mockMixes.slice(0, 2)
 }
 
 .preview {
-  margin-bottom: 4rem;
-}
-
-.preview--mixes {
   margin-bottom: 3rem;
 }
 
 .preview__heading {
   font-size: 1.8rem;
-  color: var(--neon-pink);
+  color: var(--gold);
   margin-bottom: 1.5rem;
   text-align: center;
 }
@@ -149,13 +150,6 @@ const previewMixes = mockMixes.slice(0, 2)
 .preview__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.preview__mixes {
-  display: flex;
-  flex-direction: column;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -170,9 +164,9 @@ const previewMixes = mockMixes.slice(0, 2)
 
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
 }
 
 .feature__icon {
@@ -181,8 +175,8 @@ const previewMixes = mockMixes.slice(0, 2)
 }
 
 .feature h2 {
-  font-size: 1.5rem;
-  color: var(--neon-pink);
+  font-size: 1.4rem;
+  color: var(--gold);
   margin-bottom: 0.75rem;
 }
 
@@ -206,7 +200,6 @@ const previewMixes = mockMixes.slice(0, 2)
   text-align: center;
   padding: 2rem 0;
   border-top: 1px solid var(--border-glow);
-  border-bottom: 1px solid var(--border-glow);
 }
 
 .stat__num {
@@ -226,9 +219,6 @@ const previewMixes = mockMixes.slice(0, 2)
 }
 
 @media (max-width: 480px) {
-  .stats {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
+  .stats { grid-template-columns: 1fr; gap: 1.5rem; }
 }
 </style>

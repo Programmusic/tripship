@@ -2,26 +2,28 @@
   <header class="header">
     <div class="header__inner">
       <RouterLink to="/" class="logo">
-        <span class="logo__icon">▶</span>
+        <span class="logo__icon">☠</span>
         <span class="logo__text">Trip Ship</span>
-        <span class="logo__tag">90s Sound System</span>
+        <span class="logo__tag">Unsocial Media</span>
       </RouterLink>
 
       <nav class="nav" :class="{ 'nav--open': menuOpen }">
-        <RouterLink to="/" @click="menuOpen = false">Home</RouterLink>
-        <RouterLink to="/memories" @click="menuOpen = false">Memories</RouterLink>
-        <RouterLink to="/mixes" @click="menuOpen = false">DJ Mixes</RouterLink>
+        <RouterLink to="/aaaarrifacts" @click="menuOpen = false">Aaaarrifacts</RouterLink>
+        <RouterLink to="/captains-cabin" @click="menuOpen = false">Cabin</RouterLink>
+        <RouterLink to="/memories" @click="menuOpen = false">Tales</RouterLink>
+        <RouterLink to="/mixes" @click="menuOpen = false">Deck</RouterLink>
 
         <template v-if="auth.isAuthenticated">
+          <RouterLink to="/the-list" @click="menuOpen = false">The List</RouterLink>
           <RouterLink to="/profile" @click="menuOpen = false" class="nav__profile">
             {{ auth.displayName }}
           </RouterLink>
-          <button class="btn btn--ghost nav__logout" @click="handleLogout">Logout</button>
+          <button class="btn btn--ghost nav__logout" @click="handleLogout">Abandon Ship</button>
         </template>
         <template v-else>
-          <RouterLink to="/login" @click="menuOpen = false">Login</RouterLink>
+          <RouterLink to="/login" @click="menuOpen = false">Board</RouterLink>
           <RouterLink to="/register" class="btn btn--pink nav__join" @click="menuOpen = false">
-            Join the Crew
+            Get On The List
           </RouterLink>
         </template>
       </nav>
@@ -51,8 +53,8 @@ function handleLogout() {
 
 <style scoped>
 .header {
-  border-bottom: 1px solid var(--border-glow);
-  background: rgba(10, 10, 18, 0.9);
+  border-bottom: 2px solid var(--border-glow);
+  background: rgba(6, 8, 16, 0.95);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
@@ -78,8 +80,7 @@ function handleLogout() {
 }
 
 .logo__icon {
-  color: var(--neon-pink);
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -91,15 +92,15 @@ function handleLogout() {
 .logo__text {
   font-family: var(--font-display);
   font-size: 1.8rem;
-  color: var(--text-primary);
-  letter-spacing: 0.08em;
+  color: var(--gold);
+  letter-spacing: 0.05em;
 }
 
 .logo__tag {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--neon-cyan);
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
   display: none;
 }
 
@@ -110,29 +111,31 @@ function handleLogout() {
 .nav {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .nav a {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
 }
 
 .nav a.router-link-active {
-  color: var(--neon-cyan);
-  text-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(201, 162, 39, 0.4);
 }
 
 .nav__join {
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.7rem;
 }
 
 .nav__logout {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.7rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.65rem;
 }
 
 .nav__profile {
@@ -153,11 +156,10 @@ function handleLogout() {
   display: block;
   width: 24px;
   height: 2px;
-  background: var(--neon-cyan);
-  transition: 0.2s;
+  background: var(--gold);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .menu-toggle { display: flex; }
 
   .nav {
@@ -169,7 +171,7 @@ function handleLogout() {
     flex-direction: column;
     padding: 1.5rem;
     gap: 1rem;
-    border-bottom: 1px solid var(--border-glow);
+    border-bottom: 2px solid var(--border-glow);
     transform: translateY(-120%);
     opacity: 0;
     transition: transform 0.3s, opacity 0.3s;

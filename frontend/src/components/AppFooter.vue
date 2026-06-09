@@ -1,9 +1,10 @@
 <template>
   <footer class="footer">
     <div class="footer__inner">
-      <p class="footer__brand">Trip Ship Sound System</p>
-      <p class="footer__tagline">Bass in the chest. Memories in the vault. Mixes on deck.</p>
-      <p class="footer__copy">&copy; {{ year }} Trip Ship Crew. All frequencies reserved.</p>
+      <img src="/images/skull-crossbones.svg" alt="" class="footer__skull" />
+      <p class="footer__brand">Trip Ship Unsocial Media</p>
+      <p class="footer__tagline">Bass in the chest. Tales in the hold. Mixes on deck. Invite only, arr!</p>
+      <p class="footer__copy">&copy; {{ year }} Trip Ship Crew. All frequencies & doubloons reserved. ☠</p>
     </div>
   </footer>
 </template>
@@ -14,7 +15,7 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .footer {
-  border-top: 1px solid var(--border-glow);
+  border-top: 2px solid var(--border-glow);
   background: var(--bg-panel);
   margin-top: auto;
 }
@@ -26,11 +27,16 @@ const year = new Date().getFullYear()
   text-align: center;
 }
 
+.footer__skull {
+  width: 40px;
+  margin: 0 auto 1rem;
+  opacity: 0.7;
+}
+
 .footer__brand {
   font-family: var(--font-display);
-  font-size: 1.2rem;
-  letter-spacing: 0.1em;
-  color: var(--neon-pink);
+  font-size: 1.4rem;
+  color: var(--gold);
   margin-bottom: 0.5rem;
 }
 
@@ -38,6 +44,7 @@ const year = new Date().getFullYear()
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 1rem;
+  font-style: italic;
 }
 
 .footer__copy {

@@ -2,22 +2,22 @@
   <div class="mixes-page">
     <div class="page-header">
       <div>
-        <h1 class="page-title">DJ Mixes</h1>
-        <p class="page-subtitle">Fresh sessions from the Trip Ship selectors</p>
+        <h1 class="page-title">Deck Sessions</h1>
+        <p class="page-subtitle">Fresh plunder from the Trip Ship selectors — hoist the tunes, me hearties</p>
       </div>
       <button v-if="auth.isDj" class="btn btn--pink" @click="showForm = !showForm">
-        {{ showForm ? 'Cancel' : '+ Upload Mix' }}
+        {{ showForm ? 'Belay That' : '+ Drop a Mix' }}
       </button>
     </div>
 
     <form v-if="showForm" class="mix-form card" @submit.prevent="submitMix">
-      <h2>Post a Mix</h2>
+      <h2>Drop Yer Plunder</h2>
       <div class="form-group">
-        <label for="title">Mix Title</label>
-        <input id="title" v-model="form.title" type="text" required placeholder="Jungle Pressure Vol. 1" />
+        <label for="title">Session Title</label>
+        <input id="title" v-model="form.title" type="text" required placeholder="Jungle Pressure Vol. VII" />
       </div>
       <div class="form-group">
-        <label for="description">Description</label>
+        <label for="description">Ship's Log Entry</label>
         <textarea id="description" v-model="form.description" placeholder="Tracklist, vibes, shoutouts..."></textarea>
       </div>
       <div class="form-row">
@@ -31,27 +31,19 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="audioUrl">Audio URL</label>
+        <label for="audioUrl">Tune URL</label>
         <input id="audioUrl" v-model="form.audioUrl" type="url" placeholder="https://..." />
-      </div>
-      <div class="form-group">
-        <label for="audioFile">Or upload audio file</label>
-        <input id="audioFile" type="file" accept="audio/*" @change="onFileChange" />
       </div>
       <p v-if="formError" class="error-msg">{{ formError }}</p>
       <p v-if="formSuccess" class="success-msg">{{ formSuccess }}</p>
       <button type="submit" class="btn btn--pink" :disabled="submitting">
-        {{ submitting ? 'Uploading...' : 'Drop the Mix' }}
+        {{ submitting ? 'Loadin\'...' : 'Hoist to the Deck' }}
       </button>
     </form>
 
-    <div v-if="!auth.isDj && auth.isAuthenticated" class="dj-notice card">
-      <p>Want to post mixes? Register as a DJ or update your profile role.</p>
-    </div>
-
-    <div v-if="loading" class="empty-state">Loading mixes...</div>
+    <div v-if="loading" class="empty-state">Tunin' the riggin'...</div>
     <div v-else-if="mixes.length === 0" class="empty-state">
-      <p>No mixes on deck yet. DJs — log in and drop the first session.</p>
+      <p>No sessions on deck yet. Selectors — drop the first plunder, arr!</p>
     </div>
     <div v-else class="mixes-list">
       <MixCard v-for="mix in mixes" :key="mix.id" :mix="mix" />
@@ -72,27 +64,13 @@ const showForm = ref(false)
 const submitting = ref(false)
 const formError = ref('')
 const formSuccess = ref('')
-const audioFile = ref(null)
-
-const form = reactive({
-  title: '',
-  description: '',
-  genre: '',
-  duration: '',
-  audioUrl: '',
-})
-
-function onFileChange(e) {
-  audioFile.value = e.target.files[0] || null
-}
+const form = reactive({ title: '', description: '', genre: '', duration: '', audioUrl: '' })
 
 async function fetchMixes() {
   loading.value = true
   try {
     const { data } = await api.get('/mixes')
     mixes.value = data
-  } catch {
-    mixes.value = []
   } finally {
     loading.value = false
   }
@@ -103,24 +81,13 @@ async function submitMix() {
   formSuccess.value = ''
   submitting.value = true
   try {
-    const body = new FormData()
-    body.append('title', form.title)
-    body.append('description', form.description)
-    body.append('genre', form.genre)
-    body.append('duration', form.duration)
-    if (form.audioUrl) body.append('audioUrl', form.audioUrl)
-    if (audioFile.value) body.append('audio', audioFile.value)
-
-    const { data } = await api.post('/mixes', body, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    const { data } = await api.post('/mixes', form)
     mixes.value.unshift(data)
     Object.assign(form, { title: '', description: '', genre: '', duration: '', audioUrl: '' })
-    audioFile.value = null
-    formSuccess.value = 'Mix posted!'
+    formSuccess.value = 'Mix hoisted to the deck, arr!'
     showForm.value = false
   } catch (err) {
-    formError.value = err.response?.data?.error || 'Failed to post mix'
+    formError.value = err.response?.data?.error || 'Failed to drop mix'
   } finally {
     submitting.value = false
   }
@@ -138,38 +105,9 @@ onMounted(fetchMixes)
   flex-wrap: wrap;
   margin-bottom: 2rem;
 }
-
-.mix-form {
-  margin-bottom: 2rem;
-}
-
-.mix-form h2 {
-  font-size: 1.3rem;
-  color: var(--neon-cyan);
-  margin-bottom: 1.25rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.mixes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.dj-notice {
-  margin-bottom: 2rem;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-@media (max-width: 480px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-}
+.mix-form { margin-bottom: 2rem; }
+.mix-form h2 { font-size: 1.3rem; color: var(--neon-cyan); margin-bottom: 1.25rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.mixes-list { display: flex; flex-direction: column; gap: 1.5rem; }
+@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
 </style>

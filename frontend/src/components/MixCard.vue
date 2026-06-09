@@ -6,9 +6,9 @@
     <div class="mix-card__content">
       <header class="mix-card__header">
         <h3 class="mix-card__title">{{ mix.title }}</h3>
-        <span class="badge badge--dj">DJ</span>
+        <span class="badge badge--dj">Selector</span>
       </header>
-      <p class="mix-card__dj">by {{ mix.djName }}</p>
+      <p class="mix-card__dj">hoisted by {{ mix.djName }}</p>
       <p v-if="mix.description" class="mix-card__desc">{{ mix.description }}</p>
       <div class="mix-card__meta">
         <span v-if="mix.genre">{{ mix.genre }}</span>
@@ -16,7 +16,7 @@
         <time>{{ formatDate(mix.createdAt) }}</time>
       </div>
       <a v-if="mix.audioUrl" :href="mix.audioUrl" class="btn mix-card__play" target="_blank" rel="noopener">
-        ▶ Listen
+        ▶ Hoist the Tunes
       </a>
     </div>
   </article>
