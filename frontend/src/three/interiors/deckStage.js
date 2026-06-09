@@ -145,27 +145,28 @@ export function createKrakenbyteStage(stageZ = -3.8) {
   sign.userData.animType = 'sign'
 
   const booth = buildDJBooth()
-  booth.position.set(0, 0.35, 0.35)
+  booth.position.set(0, 0.35, 0.55)
   stage.add(booth)
   stage.userData.rig = booth
 
   const dj = buildKrakenbyteDJ()
-  dj.position.set(0, 0.35, 1.05)
+  dj.position.set(0, 0.35, -0.65)
+  dj.rotation.y = Math.PI
   stage.add(dj)
   stage.userData.dj = dj
 
-  const spotPink = new THREE.SpotLight(PINK, 80, 18, Math.PI / 6, 0.4, 1)
-  spotPink.position.set(-2.5, 5.5, 4)
-  spotPink.target.position.set(0, 1.8, 0.5)
+  const spotPink = new THREE.SpotLight(PINK, 55, 22, Math.PI / 5, 0.45, 1)
+  spotPink.position.set(-2.5, 5.5, 5)
+  spotPink.target.position.set(0, 1.2, 0.55)
   stage.add(spotPink, spotPink.target)
 
-  const spotCyan = new THREE.SpotLight(CYAN, 60, 18, Math.PI / 6, 0.4, 1)
-  spotCyan.position.set(2.5, 5.5, 4)
-  spotCyan.target.position.set(0, 1.8, 0.5)
+  const spotCyan = new THREE.SpotLight(CYAN, 45, 22, Math.PI / 5, 0.45, 1)
+  spotCyan.position.set(2.5, 5.5, 5)
+  spotCyan.target.position.set(0, 1.2, 0.55)
   stage.add(spotCyan, spotCyan.target)
 
-  const key = new THREE.PointLight(0xffeedd, 25, 12)
-  key.position.set(0, 3, 2.5)
+  const key = new THREE.PointLight(0xffeedd, 18, 14)
+  key.position.set(0, 3.5, 4)
   stage.add(key)
 
   const rim = new THREE.PointLight(PINK, 15, 10)
@@ -255,7 +256,7 @@ function buildKrakenbyteDJ() {
   addMesh(armL, new THREE.SphereGeometry(0.12, 10, 10), metal(), [0, -0.38, 0], [0, 0, 0])
 
   const tentacle = new THREE.Group()
-  tentacle.position.set(0.58, 1.15, 0.2)
+  tentacle.position.set(0.52, 1.1, 0.45)
   tentacle.userData.animType = 'tentacle'
   const segs = []
   for (let i = 0; i < 5; i++) {
@@ -294,9 +295,22 @@ function buildKrakenbyteDJ() {
   return dj
 }
 
-export function createDeckSessionsMeta(width, depth) {
+export function computeEntryLook(spawn, focus) {
+  const dir = focus.clone().sub(spawn)
+  const horiz = Math.sqrt(dir.x * dir.x + dir.z * dir.z)
   return {
-    spawn: new THREE.Vector3(0, 1.65, depth / 2 - 3.2),
+    yaw: Math.atan2(-dir.x, -dir.z),
+    pitch: Math.atan2(dir.y, horiz),
+  }
+}
+
+export function createDeckSessionsMeta(width, depth) {
+  const spawn = new THREE.Vector3(0, 1.72, depth / 2 - 0.85)
+  const focusPoint = new THREE.Vector3(0, 1.45, -3.2)
+  const look = computeEntryLook(spawn, focusPoint)
+
+  return {
+    spawn,
     exitZ: depth / 2 - 0.6,
     bounds: {
       minX: -width / 2 + 0.45,
@@ -304,8 +318,10 @@ export function createDeckSessionsMeta(width, depth) {
       minZ: -depth / 2 + 0.45,
       maxZ: depth / 2 - 0.45,
     },
-    spawnYaw: Math.PI,
-    focusPoint: new THREE.Vector3(0, 1.6, -3.8),
+    spawnYaw: look.yaw,
+    spawnPitch: look.pitch,
+    focusPoint,
+    entryFov: 62,
   }
 }
 

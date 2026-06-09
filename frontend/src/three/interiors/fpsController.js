@@ -24,10 +24,10 @@ export class FPSController {
     this._onPointerUp = this.onPointerUp.bind(this)
   }
 
-  enable(spawn, yaw = Math.PI) {
+  enable(spawn, yaw = Math.PI, pitch = 0) {
     this.enabled = true
     this.yaw = yaw
-    this.pitch = 0
+    this.pitch = pitch
     this.camera.position.copy(spawn)
     this.applyRotation()
     window.addEventListener('keydown', this._onKeyDown)

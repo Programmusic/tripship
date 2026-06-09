@@ -127,7 +127,7 @@ let resizeObserver
 let activeFlight = null
 let raycaster, pointer
 let labelElements = []
-let savedOrbitPos, savedOrbitTarget
+let savedOrbitPos, savedOrbitTarget, savedFov
 let stars, dock, interiorLighting, bloomPass
 
 function init() {
@@ -283,14 +283,22 @@ function startInteriorWalk() {
   stars.visible = false
   dock.visible = false
   const isDeck = loc.id === 'mixes'
-  renderer.toneMappingExposure = isDeck ? 1.75 : 1.45
+  renderer.toneMappingExposure = isDeck ? 1.5 : 1.45
   if (bloomPass) {
-    bloomPass.strength = isDeck ? (isMobile.value ? 0.85 : 1.15) : (isMobile.value ? 0.5 : 0.75)
-    bloomPass.threshold = isDeck ? 0.22 : 0.35
+    bloomPass.strength = isDeck ? (isMobile.value ? 0.6 : 0.85) : (isMobile.value ? 0.5 : 0.75)
+    bloomPass.threshold = isDeck ? 0.28 : 0.35
   }
 
+  savedFov = camera.fov
+  camera.fov = interiorMeta.entryFov ?? (isMobile.value ? 60 : 56)
+  camera.updateProjectionMatrix()
+
   fpsController.bounds = interiorMeta.bounds
-  fpsController.enable(interiorMeta.spawn, interiorMeta.spawnYaw)
+  fpsController.enable(
+    interiorMeta.spawn,
+    interiorMeta.spawnYaw,
+    interiorMeta.spawnPitch ?? 0
+  )
   if (!isMobile.value) fpsController.requestPointerLock()
 
   viewMode.value = 'interior'
@@ -326,6 +334,11 @@ function exitInterior() {
 
     if (savedOrbitPos) camera.position.copy(savedOrbitPos)
     if (savedOrbitTarget) controls.target.copy(savedOrbitTarget)
+    if (savedFov) {
+      camera.fov = savedFov
+      camera.updateProjectionMatrix()
+      savedFov = null
+    }
     controls.enabled = true
     camera.rotation.set(0, 0, 0)
 

@@ -132,8 +132,14 @@ export function createTerminal(parent, position, label, accent) {
 
 export function createRoomMeta(width, depth) {
   const margin = 0.45
+  const spawn = new THREE.Vector3(0, 1.72, depth / 2 - 0.85)
+  const focusPoint = new THREE.Vector3(0, 1.4, -depth / 2 + 2.5)
+  const horiz = Math.sqrt(focusPoint.x ** 2 + (focusPoint.z - spawn.z) ** 2)
+  const dirY = focusPoint.y - spawn.y
+  const dirZ = focusPoint.z - spawn.z
+
   return {
-    spawn: new THREE.Vector3(0, 1.65, depth / 2 - 1.8),
+    spawn,
     exitZ: depth / 2 - 0.6,
     bounds: {
       minX: -width / 2 + margin,
@@ -141,6 +147,9 @@ export function createRoomMeta(width, depth) {
       minZ: -depth / 2 + margin,
       maxZ: depth / 2 - margin,
     },
-    spawnYaw: Math.PI,
+    spawnYaw: Math.atan2(-focusPoint.x, -dirZ),
+    spawnPitch: Math.atan2(dirY, horiz),
+    focusPoint,
+    entryFov: 58,
   }
 }
