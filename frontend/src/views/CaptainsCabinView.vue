@@ -5,12 +5,12 @@
       <h1 class="page-title">{{ post.title }}</h1>
       <time class="cabin-date">{{ formatDate(post.createdAt) }}</time>
       <div class="cabin-content card" v-html="formattedContent"></div>
-      <p class="cabin-signoff">— Cap'n Pete ☠</p>
+      <p class="cabin-signoff">— Captain Flystyle ☠</p>
     </template>
 
     <template v-else>
       <h1 class="page-title">Captain's Cabin</h1>
-      <p class="page-subtitle">Scribblin's from the Cap'n — news, voyages & orders from the helm</p>
+      <p class="page-subtitle">Captain Flystyle's log — news, voyages & orders from the helm</p>
 
       <div class="cabin-hero card">
         <img src="/images/skull-crossbones.svg" alt="" class="cabin-hero__skull" />

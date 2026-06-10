@@ -4,7 +4,7 @@ export const SHIP_LOCATIONS = [
   {
     id: 'captains-cabin',
     label: "Captain's Cabin",
-    desc: 'Scribblin\'s from the Cap\'n — charts, logs & orders from the helm',
+    desc: 'Captain Flystyle\'s log — charts, scribblin\'s & orders from the helm',
     route: '/captains-cabin',
     position: new THREE.Vector3(-1.1, 0.85, 0.55),
     interiorRotation: Math.PI * 0.85,
@@ -12,7 +12,7 @@ export const SHIP_LOCATIONS = [
   },
   {
     id: 'aaaarrifacts',
-    label: 'Aaaarrifacts',
+    label: 'Arrrrrtifacts',
     desc: 'Vault o\' old fliers, posters & buried rave treasure',
     route: '/aaaarrifacts',
     position: new THREE.Vector3(-0.35, 0.35, 0.75),

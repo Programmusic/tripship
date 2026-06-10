@@ -9,13 +9,13 @@
 
       <p class="hero__desc">
         Ahoy! The galleon sails the cosmos with bass bins rigged to the masts. A private crew for mates
-        from back in the day — share tales, plunder the <strong>Aaaarrifacts</strong>, catch deck sessions,
+        from back in the day — share tales, plunder the <strong>Arrrrrtifacts</strong>, catch deck sessions,
         and read the <strong>Captain's Cabin</strong>. No algorithms. No randos. Just family.
       </p>
       <div class="hero__actions">
         <RouterLink to="/ship" class="btn btn--pink">☠ Board the Ship</RouterLink>
         <RouterLink to="/register" class="btn">Get On The List</RouterLink>
-        <RouterLink to="/aaaarrifacts" class="btn btn--ghost">Aaaarrifacts</RouterLink>
+        <RouterLink to="/aaaarrifacts" class="btn btn--ghost">Arrrrrtifacts</RouterLink>
       </div>
     </section>
 
@@ -32,14 +32,14 @@
     <section class="features">
       <div class="feature card">
         <div class="feature__icon">📜</div>
-        <h2>Aaaarrifacts</h2>
+        <h2>Arrrrrtifacts</h2>
         <p>Old fliers, posters, tickets — buried treasure from warehouse raves and sound clashes. Upload yer loot.</p>
         <RouterLink to="/aaaarrifacts" class="feature__link">Plunder the vault →</RouterLink>
       </div>
       <div class="feature card">
         <div class="feature__icon">🏴‍☠️</div>
         <h2>Captain's Cabin</h2>
-        <p>Scribblin's from Cap'n Pete. News, voyages, and orders from the helm about what's happenin' now.</p>
+        <p>Read the Captain's Log from Captain Flystyle. News, voyages, and orders from the helm about what's happenin' now.</p>
         <RouterLink to="/captains-cabin" class="feature__link">Enter the cabin →</RouterLink>
       </div>
       <div class="feature card">

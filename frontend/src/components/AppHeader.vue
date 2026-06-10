@@ -9,7 +9,7 @@
 
       <nav class="nav" :class="{ 'nav--open': menuOpen }">
         <RouterLink to="/ship" @click="menuOpen = false">Explore</RouterLink>
-        <RouterLink to="/aaaarrifacts" @click="menuOpen = false">Aaaarrifacts</RouterLink>
+        <RouterLink to="/aaaarrifacts" @click="menuOpen = false">Arrrrrtifacts</RouterLink>
         <RouterLink to="/captains-cabin" @click="menuOpen = false">Cabin</RouterLink>
         <RouterLink to="/memories" @click="menuOpen = false">Tales</RouterLink>
         <RouterLink to="/mixes" @click="menuOpen = false">Deck</RouterLink>

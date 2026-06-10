@@ -1,6 +1,6 @@
 <template>
   <div class="artifacts-page">
-    <h1 class="page-title">Aaaarrifacts ☠</h1>
+    <h1 class="page-title">Arrrrrtifacts ☠</h1>
     <p class="page-subtitle">Buried treasure from the dancefloor — old fliers, posters, tickets & loot from back in the day</p>
 
     <div class="invite-gate">

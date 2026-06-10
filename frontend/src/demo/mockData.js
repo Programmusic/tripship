@@ -1,8 +1,8 @@
 export const demoUser = {
   id: 1,
-  username: 'captain_pete',
-  email: 'captain@tripship.com',
-  displayName: 'Cap\'n Pete',
+  username: 'captain_flystyle',
+  email: 'flystyle@tripship.com',
+  displayName: 'Captain Flystyle',
   role: 'dj',
   invitesRemaining: 3,
   createdAt: '1994-08-12T00:00:00.000Z',
@@ -41,7 +41,7 @@ export const mockMemories = [
 export const mockMixes = [
   {
     id: 1,
-    djName: 'Cap\'n Pete',
+    djName: 'Captain Flystyle',
     title: 'Jungle Pressure Vol. VII',
     description: 'Full power amen session. Plundered from the vault — Roni Size, LTJ Bukem, Dillinja, and exclusive dubplates.',
     genre: 'Jungle / D&B',
@@ -127,13 +127,13 @@ So ye found the ship. Good. This be **Unsocial Media** — no algorithms, no ads
 **The rules be simple:**
 - If yer name ain't on **The List**, ye ain't comin' in
 - Crew invite crew — mates from back in the day only
-- Share memories, post mixes, browse the **Aaaarrifacts**
-- The **Captain's Cabin** be where I scribble me thoughts
+- Share memories, post mixes, browse the **Arrrrrtifacts**
+- The **Captain's Cabin** be where Captain Flystyle scribbles the log
 
 We built this for the family. The ones who were there when the bass bins shook the warehouse.
 
 Stay seaworthy,
-**Cap'n Pete** ☠`,
+**Captain Flystyle** ☠`,
     createdAt: '2024-12-01T10:00:00.000Z',
   },
   {
@@ -147,25 +147,25 @@ Bristol be callin'. We\'re loadin\' the van — I mean, the galleon — with fre
 
 If ye were at the \'96 warehouse session, ye know what\'s comin'. If ye weren\'t... get yerself on **The List**.
 
-More soon from the Captain's Cabin.
+More soon in the Captain's Log.
 
-**Cap'n Pete**`,
+**Captain Flystyle**`,
     createdAt: '2024-11-20T18:00:00.000Z',
   },
   {
     id: 3,
     slug: 'aaaarrifacts-vault-opens',
-    title: 'The Aaaarrifacts Vault Be Open',
+    title: 'The Arrrrrtifacts Vault Be Open',
     excerpt: 'Old fliers, posters, tickets — buried treasure from the dancefloor. Upload yer loot, me hearties.',
     content: `Me hearties,
 
-The **Aaaarrifacts** section be live. Dig out them old fliers from yer mum's attic.
+The **Arrrrrtifacts** section be live. Dig out them old fliers from yer mum's attic.
 
 Photograph 'em. Upload 'em. Tell the story.
 
 This be our museum. No curators. Just crew.
 
-**Cap'n Pete**`,
+**Captain Flystyle**`,
     createdAt: '2024-11-10T12:00:00.000Z',
   },
 ]

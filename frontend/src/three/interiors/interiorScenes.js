@@ -99,7 +99,7 @@ function buildArtifacts(accent) {
   }
 
   populateArtifacts(room, w, d)
-  createTerminal(room, [0, 0, -d / 2 + 3.5], 'Vault Terminal', accent)
+  createTerminal(room, [0, 0, -d / 2 + 3.5], 'Arrrrrtifacts Vault', accent)
 
   return { room, meta: createRoomMeta(w, d) }
 }
