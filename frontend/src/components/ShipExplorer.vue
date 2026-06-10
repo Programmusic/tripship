@@ -77,18 +77,11 @@
 
     <Transition name="echo">
       <div v-if="isEchoRoom" class="echo-room">
-        <div class="echo-room__wash" />
-        <div
-          v-for="(echo, i) in visibleEchoes"
-          :key="echo.text"
-          class="echo-room__ghost"
-          :style="{ top: `${18 + i * 14}%` }"
-        >
-          {{ echo.text }}
-        </div>
-        <div class="echo-room__parchment">
+        <div class="echo-room__frame">
           <p class="echo-room__eyebrow">☠ Echo Room ☠</p>
           <h2 class="echo-room__title">Captain's Log</h2>
+        </div>
+        <div class="echo-room__parchment">
           <pre class="echo-room__text">{{ logRevealText }}<span v-if="!logComplete" class="echo-room__cursor">|</span></pre>
           <Transition name="hud">
             <button
@@ -160,7 +153,6 @@ import {
   updateCameraTransition,
   computeExperienceCameraWorld,
   flyCameraOut,
-  CAPTAINS_LOG_ECHOES,
   getLogRevealState,
   getRevealedLogText,
 } from '@/three/interiors/artifactExperiences/index.js'
@@ -182,11 +174,6 @@ const logComplete = ref(false)
 const isEchoRoom = computed(() =>
   viewMode.value === 'artifact' || viewMode.value === 'artifact-enter'
 )
-const visibleEchoes = computed(() =>
-  CAPTAINS_LOG_ECHOES.filter(
-    (e) => logProgress.value >= e.at && logProgress.value < e.at + 0.14
-  )
-)
 
 let renderer, labelRenderer, composer, scene, camera, ship, controls, hotspots, clock
 let interiorRooms, interiorGroup, interiorMeta, fpsController
@@ -198,7 +185,7 @@ let labelElements = []
 let savedOrbitPos, savedOrbitTarget, savedFov
 let stars, dock, interiorLighting, bloomPass
 let activeExperience, activeExperienceDef, hiddenRoomChildren
-let artifactCameraTransition, savedInteriorCam, artifactExitTransition
+let artifactCameraTransition, savedInteriorCam, artifactExitTransition, artifactCamBase, artifactCamWorld
 const isInsideShip = computed(() =>
   ['interior', 'artifact', 'artifact-enter'].includes(viewMode.value)
 )
@@ -463,14 +450,14 @@ function enterArtifactExperience(artifactType) {
   logProgress.value = 0
   logComplete.value = false
 
-  const camWorld = computeExperienceCameraWorld(mounted.anchor, def.getCamera())
+  artifactCamWorld = computeExperienceCameraWorld(mounted.anchor, def.getCamera())
   artifactCameraTransition = createCameraTransition(
     camera,
     savedInteriorCam.position,
     savedInteriorCam.quaternion,
-    camWorld.position,
-    camWorld.lookAt,
-    camWorld.fov,
+    artifactCamWorld.position,
+    artifactCamWorld.lookAt,
+    artifactCamWorld.fov,
     savedInteriorCam.fov
   )
 
@@ -524,6 +511,8 @@ function finishExitArtifact() {
   activeExperienceDef = null
   artifactCameraTransition = null
   artifactExitTransition = null
+  artifactCamBase = null
+  artifactCamWorld = null
   savedInteriorCam = null
   interactPrompt.value = ''
   enterFade.value = 0
@@ -690,13 +679,29 @@ function animate() {
     const done = updateCameraTransition(artifactCameraTransition, camera, delta)
     activeExperienceDef?.animate(activeExperience, time)
     updateLogReveal(time)
-    if (done) viewMode.value = 'artifact'
+    if (done) {
+      artifactCamBase = {
+        position: artifactCamWorld.position.clone(),
+        lookAt: artifactCamWorld.lookAt.clone(),
+      }
+      viewMode.value = 'artifact'
+    }
   }
 
   if (viewMode.value === 'artifact') {
     activeExperienceDef?.animate(activeExperience, time)
     updateLogReveal(time)
     updateInteractPrompt()
+    if (artifactCamBase) {
+      const sway = Math.sin(time * 0.45) * 0.025
+      const bob = Math.sin(time * 0.32) * 0.012
+      camera.position.set(
+        artifactCamBase.position.x + sway,
+        artifactCamBase.position.y + bob,
+        artifactCamBase.position.z
+      )
+      camera.lookAt(artifactCamBase.lookAt)
+    }
   }
 
   if (viewMode.value === 'artifact-exit' && artifactExitTransition) {
@@ -828,7 +833,9 @@ onUnmounted(cleanup)
 }
 
 .explorer__vignette--artifact {
-  background: radial-gradient(ellipse at center, transparent 20%, rgba(10, 6, 4, 0.92) 100%);
+  background:
+    linear-gradient(to bottom, transparent 0%, transparent 42%, rgba(10, 6, 4, 0.55) 72%, rgba(6, 4, 2, 0.88) 100%),
+    radial-gradient(ellipse 90% 50% at 50% 28%, transparent 40%, rgba(6, 4, 2, 0.5) 100%);
   z-index: 3;
 }
 
@@ -837,100 +844,59 @@ onUnmounted(cleanup)
   inset: 0;
   z-index: 12;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5rem 1rem 2rem;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4.25rem 0 0;
   pointer-events: none;
 }
 
-.echo-room__wash {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 30% 80%, rgba(255, 170, 80, 0.08) 0%, transparent 45%),
-    radial-gradient(ellipse at center, rgba(20, 12, 8, 0.3) 0%, rgba(8, 5, 3, 0.85) 100%);
+.echo-room__frame {
+  text-align: center;
   pointer-events: none;
+  padding: 0 1rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
 }
 
-.echo-room__ghost {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 5vw, 2.2rem);
-  color: rgba(201, 162, 39, 0.14);
-  letter-spacing: 0.15em;
+.echo-room__eyebrow {
+  font-size: 0.58rem;
+  color: rgba(232, 220, 200, 0.75);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  pointer-events: none;
-  animation: echo-drift 3s ease-in-out infinite alternate;
-  white-space: nowrap;
+  margin-bottom: 0.2rem;
 }
 
-@keyframes echo-drift {
-  from { opacity: 0.5; transform: translateX(-50%) translateY(0); }
-  to { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+.echo-room__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  color: #e8dcc8;
+  text-shadow: 0 0 20px rgba(255, 180, 80, 0.25);
 }
 
 .echo-room__parchment {
   position: relative;
-  width: min(420px, calc(100% - 1.5rem));
-  max-height: calc(100vh - 8rem);
+  width: 100%;
+  max-height: 42vh;
   overflow-y: auto;
-  padding: 1.75rem 1.5rem 1.5rem;
-  background:
-    linear-gradient(165deg, #f0e6d0 0%, #e8dcc8 40%, #d8c8a8 100%);
-  border-radius: 4px;
-  box-shadow:
-    0 0 0 1px rgba(90, 64, 48, 0.35),
-    0 8px 40px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  margin-top: auto;
+  padding: 1.1rem 1.25rem 1.25rem;
+  background: linear-gradient(to top, rgba(12, 8, 5, 0.94) 0%, rgba(12, 8, 5, 0.72) 55%, transparent 100%);
+  border-top: 1px solid rgba(201, 162, 39, 0.2);
   pointer-events: auto;
-}
-
-.echo-room__parchment::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    transparent,
-    transparent 35px,
-    rgba(139, 100, 60, 0.08) 35px,
-    rgba(139, 100, 60, 0.08) 36px
-  );
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-.echo-room__eyebrow {
-  position: relative;
-  font-size: 0.6rem;
-  color: #8a7048;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  text-align: center;
-  margin-bottom: 0.35rem;
-}
-
-.echo-room__title {
-  position: relative;
-  font-family: var(--font-display);
-  font-size: clamp(1.35rem, 5vw, 1.75rem);
-  color: #3a2818;
-  text-align: center;
-  margin-bottom: 1.25rem;
-  text-shadow: none;
+  backdrop-filter: blur(4px);
 }
 
 .echo-room__text {
   position: relative;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(0.85rem, 3.2vw, 1rem);
+  font-size: clamp(0.78rem, 2.8vw, 0.92rem);
   font-style: italic;
-  line-height: 1.65;
-  color: #1a1410;
+  line-height: 1.55;
+  color: rgba(232, 220, 200, 0.92);
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;
+  max-width: 36rem;
+  margin-inline: auto;
 }
 
 .echo-room__cursor {
@@ -950,9 +916,10 @@ onUnmounted(cleanup)
   position: relative;
   display: block;
   width: 100%;
-  margin-top: 1.5rem;
+  max-width: 36rem;
+  margin: 1rem auto 0;
   padding: 0.85rem 1rem;
-  background: rgba(26, 20, 16, 0.92);
+  background: rgba(26, 20, 16, 0.85);
   border: 1px solid #c9a227;
   color: #e8dcc8;
   font-family: var(--font-mono);
