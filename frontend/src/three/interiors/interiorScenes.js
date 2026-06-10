@@ -62,7 +62,6 @@ function buildCaptainsCabin(accent) {
   wheel.rotation.x = Math.PI / 2
 
   populateCaptainsCabin(room, w, d)
-  createTerminal(room, [0, 0, -d / 2 + 3.2], "Captain's Log", accent)
 
   return { room, meta: createRoomMeta(w, d) }
 }
@@ -211,7 +210,7 @@ export function buildInteriorScene(location) {
 function collectInteractables(group) {
   const interactables = []
   group.traverse((obj) => {
-    if (obj.userData.isTerminal || obj.userData.isExitDoor) {
+    if (obj.userData.isTerminal || obj.userData.isExitDoor || obj.userData.isRoomArtifact) {
       interactables.push(obj)
     }
   })
@@ -226,6 +225,16 @@ export function animateInterior(group, time) {
   }
 
   group?.traverse((obj) => {
+    if (obj.userData.animType === 'quillHint') {
+      obj.rotation.z = -0.5 + Math.sin(time * 2) * 0.15
+    }
+    if (obj.userData.animType === 'artifactRing') {
+      obj.rotation.z = time * 1.2
+      obj.material.opacity = 0.3 + Math.sin(time * 3) * 0.2
+    }
+    if (obj.userData.artifactGlow) {
+      obj.userData.artifactGlow.intensity = 4 + Math.sin(time * 4) * 2
+    }
     if (obj.userData.pulse !== undefined && !obj.userData.animType) {
       const s = 1 + Math.sin(time * 3 + obj.userData.pulse) * 0.2
       obj.scale.setScalar(s)

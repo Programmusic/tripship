@@ -14,11 +14,13 @@
       :class="{
         'explorer__vignette--peek': viewMode === 'peek',
         'explorer__vignette--interior': viewMode === 'interior',
+        'explorer__vignette--artifact': viewMode === 'artifact' || viewMode === 'artifact-enter',
       }"
     />
 
     <div class="explorer__chrome">
-      <RouterLink v-if="viewMode !== 'interior'" to="/" class="explorer__back btn btn--ghost">← Back to Port</RouterLink>
+      <RouterLink v-if="!isInsideShip" to="/" class="explorer__back btn btn--ghost">← Back to Port</RouterLink>
+      <button v-else-if="viewMode === 'artifact' || viewMode === 'artifact-enter'" class="explorer__back btn btn--ghost" @click="exitArtifact">← Leave the Log</button>
       <button v-else class="explorer__back btn btn--ghost" @click="exitInterior">← Back to Deck</button>
       <div class="explorer__hints">
         <template v-if="viewMode === 'orbit'">
@@ -30,8 +32,17 @@
         <template v-else-if="viewMode === 'peek'">
           <span>Peep inside</span><span>·</span><span>Enter when ready</span>
         </template>
+        <template v-else-if="viewMode === 'artifact'">
+          <span>☠ Captain Flystyle writes...</span><span>·</span><span>E for full log</span><span>·</span><span>Esc to leave</span>
+        </template>
+        <template v-else-if="viewMode === 'artifact-enter'">
+          <span>Enterin' the echo...</span>
+        </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'mixes'">
           <span>☠ DJ Krakenbyte on the decks</span><span>·</span><span>E to open mixes</span>
+        </template>
+        <template v-else-if="viewMode === 'interior' && selected?.id === 'captains-cabin'">
+          <span>Find the glowing log on the desk</span><span>·</span><span>E to read</span>
         </template>
         <template v-else-if="viewMode === 'interior'">
           <span>WASD move</span><span>·</span><span>Mouse look</span><span>·</span><span>E interact</span>
@@ -55,9 +66,16 @@
     </Transition>
 
     <Transition name="hud">
-      <div v-if="viewMode === 'interior' && interactPrompt" class="explorer__interact">
+      <div v-if="(viewMode === 'interior' || viewMode === 'artifact') && interactPrompt" class="explorer__interact">
         <span class="interact-key">E</span>
         <span>{{ interactPrompt }}</span>
+      </div>
+    </Transition>
+
+    <Transition name="hud">
+      <div v-if="viewMode === 'artifact'" class="explorer__artifact-title">
+        <p class="artifact-title__eyebrow">☠ Echo Room ☠</p>
+        <h2>Captain's Log</h2>
       </div>
     </Transition>
 
@@ -77,12 +95,20 @@
       </button>
     </div>
 
+    <button
+      v-if="(viewMode === 'artifact' || viewMode === 'artifact-enter') && isMobile && interactPrompt"
+      class="touch-action touch-action--artifact btn btn--pink"
+      @click="doInteract"
+    >
+      {{ interactPrompt }}
+    </button>
+
     <div v-if="!ready" class="explorer__loading">Boardin' the galleon...</div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -108,6 +134,17 @@ import {
   createInteriorLighting,
 } from '@/three/interiors/interiorManager.js'
 import { animateInterior, findInteractable, isNearExit } from '@/three/interiors/interiorScenes.js'
+import {
+  getArtifactExperience,
+  findRoomArtifact,
+  mountArtifactExperience,
+  hideRoomForExperience,
+  restoreRoomVisibility,
+  createCameraTransition,
+  updateCameraTransition,
+  computeExperienceCameraWorld,
+  flyCameraOut,
+} from '@/three/interiors/artifactExperiences/index.js'
 
 const router = useRouter()
 const containerRef = ref(null)
@@ -129,6 +166,11 @@ let raycaster, pointer
 let labelElements = []
 let savedOrbitPos, savedOrbitTarget, savedFov
 let stars, dock, interiorLighting, bloomPass
+let activeExperience, activeExperienceDef, hiddenRoomChildren
+let artifactCameraTransition, savedInteriorCam, artifactExitTransition
+const isInsideShip = computed(() =>
+  ['interior', 'artifact', 'artifact-enter'].includes(viewMode.value)
+)
 
 function init() {
   const container = containerRef.value
@@ -308,6 +350,10 @@ function startInteriorWalk() {
 }
 
 function exitInterior() {
+  if (viewMode.value === 'artifact' || viewMode.value === 'artifact-enter') {
+    finishExitArtifact()
+  }
+
   enterFade.value = 1
 
   setTimeout(() => {
@@ -350,11 +396,117 @@ function exitInterior() {
   }, 350)
 }
 
+function enterArtifactExperience(artifactType) {
+  const def = getArtifactExperience(artifactType)
+  if (!def || !interiorGroup) return
+
+  fpsController.disable()
+  document.exitPointerLock?.()
+
+  savedInteriorCam = {
+    position: camera.position.clone(),
+    quaternion: camera.quaternion.clone(),
+    fov: camera.fov,
+    yaw: fpsController.yaw,
+    pitch: fpsController.pitch,
+  }
+
+  const mounted = mountArtifactExperience(interiorGroup, artifactType)
+  if (!mounted) return
+
+  activeExperience = mounted.exp
+  activeExperienceDef = def
+  activeExperience.userData.startTime = clock.getElapsedTime()
+  hiddenRoomChildren = hideRoomForExperience(interiorGroup, activeExperience)
+
+  scene.fog = new THREE.FogExp2(0x020408, 0.055)
+  scene.background = new THREE.Color(0x020408)
+  renderer.toneMappingExposure = 1.65
+  if (bloomPass) {
+    bloomPass.strength = isMobile.value ? 0.9 : 1.25
+    bloomPass.threshold = 0.18
+  }
+
+  const camWorld = computeExperienceCameraWorld(mounted.anchor, def.getCamera())
+  artifactCameraTransition = createCameraTransition(
+    camera,
+    savedInteriorCam.position,
+    savedInteriorCam.quaternion,
+    camWorld.position,
+    camWorld.lookAt,
+    camWorld.fov,
+    savedInteriorCam.fov
+  )
+
+  enterFade.value = 1
+  setTimeout(() => { enterFade.value = 0 }, 400)
+  viewMode.value = 'artifact-enter'
+}
+
+function exitArtifact() {
+  if (!savedInteriorCam || !activeExperience) {
+    viewMode.value = 'interior'
+    return
+  }
+
+  enterFade.value = 0.85
+  artifactExitTransition = {
+    fromPos: camera.position.clone(),
+    toPos: savedInteriorCam.position.clone(),
+    fromQuat: camera.quaternion.clone(),
+    toQuat: savedInteriorCam.quaternion.clone(),
+    fromFov: camera.fov,
+    toFov: savedInteriorCam.fov,
+    progress: 0,
+    duration: 1,
+  }
+  viewMode.value = 'artifact-exit'
+}
+
+function finishExitArtifact() {
+  activeExperience.visible = false
+  restoreRoomVisibility(hiddenRoomChildren)
+  hiddenRoomChildren = []
+
+  scene.fog = new THREE.FogExp2(0x12101a, 0.018)
+  scene.background = new THREE.Color(0x12101a)
+  renderer.toneMappingExposure = 1.45
+  if (bloomPass) {
+    bloomPass.strength = isMobile.value ? 0.5 : 0.75
+    bloomPass.threshold = 0.35
+  }
+
+  fpsController.enable(savedInteriorCam.position, savedInteriorCam.yaw, savedInteriorCam.pitch)
+  if (!isMobile.value) fpsController.requestPointerLock()
+
+  activeExperience = null
+  activeExperienceDef = null
+  artifactCameraTransition = null
+  artifactExitTransition = null
+  savedInteriorCam = null
+  interactPrompt.value = ''
+  enterFade.value = 0
+  viewMode.value = 'interior'
+}
+
 function doInteract() {
+  if (viewMode.value === 'artifact' && activeExperienceDef) {
+    if (activeExperienceDef.isComplete(activeExperience)) {
+      router.push(activeExperienceDef.route)
+    }
+    return
+  }
+
   if (viewMode.value !== 'interior' || !interiorGroup) return
 
   if (isNearExit(interiorGroup, camera, interiorMeta)) {
     exitInterior()
+    return
+  }
+
+  const artifact = findRoomArtifact(interiorGroup, camera)
+  if (artifact?.userData.artifactType) {
+    enterArtifactExperience(artifact.userData.artifactType)
     return
   }
 
@@ -366,8 +518,11 @@ function doInteract() {
 }
 
 function onKeyDown(e) {
-  if (viewMode.value === 'interior' && (e.key === 'e' || e.key === 'E')) {
+  if ((viewMode.value === 'interior' || viewMode.value === 'artifact') && (e.key === 'e' || e.key === 'E')) {
     doInteract()
+  }
+  if (viewMode.value === 'artifact' && e.key === 'Escape') {
+    exitArtifact()
   }
   if (viewMode.value === 'interior' && e.key === 'Escape') {
     exitInterior()
@@ -399,6 +554,13 @@ function onPointerDown(event) {
 }
 
 function updateInteractPrompt() {
+  if (viewMode.value === 'artifact' && activeExperienceDef) {
+    interactPrompt.value = activeExperienceDef.isComplete(activeExperience)
+      ? activeExperienceDef.completeHint
+      : ''
+    return
+  }
+
   if (viewMode.value !== 'interior' || !interiorGroup) {
     interactPrompt.value = ''
     return
@@ -406,6 +568,12 @@ function updateInteractPrompt() {
 
   if (isNearExit(interiorGroup, camera, interiorMeta)) {
     interactPrompt.value = 'Exit to deck'
+    return
+  }
+
+  const artifact = findRoomArtifact(interiorGroup, camera)
+  if (artifact?.userData.artifactLabel) {
+    interactPrompt.value = artifact.userData.artifactLabel
     return
   }
 
@@ -463,10 +631,26 @@ function animate() {
     updateInteractPrompt()
   }
 
+  if (viewMode.value === 'artifact-enter' && artifactCameraTransition) {
+    const done = updateCameraTransition(artifactCameraTransition, camera, delta)
+    activeExperienceDef?.animate(activeExperience, time)
+    if (done) viewMode.value = 'artifact'
+  }
+
+  if (viewMode.value === 'artifact') {
+    activeExperienceDef?.animate(activeExperience, time)
+    updateInteractPrompt()
+  }
+
+  if (viewMode.value === 'artifact-exit' && artifactExitTransition) {
+    const done = flyCameraOut(camera, savedInteriorCam, delta, artifactExitTransition)
+    if (done) finishExitArtifact()
+  }
+
   if (controls.enabled) controls.update()
 
   composer.render()
-  if (viewMode.value !== 'interior') {
+  if (!isInsideShip.value) {
     labelRenderer.render(scene, camera)
   }
 
@@ -584,6 +768,43 @@ onUnmounted(cleanup)
 
 .explorer__vignette--interior {
   background: radial-gradient(ellipse at center, transparent 65%, rgba(10, 8, 16, 0.4) 100%);
+}
+
+.explorer__vignette--artifact {
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(2, 4, 8, 0.85) 100%);
+}
+
+.explorer__artifact-title {
+  position: absolute;
+  top: 4.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 14;
+}
+
+.artifact-title__eyebrow {
+  font-size: 0.65rem;
+  color: var(--neon-cyan);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.explorer__artifact-title h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--gold);
+  text-shadow: 0 0 24px rgba(201, 162, 39, 0.5);
+}
+
+.touch-action--artifact {
+  position: absolute;
+  bottom: 2rem;
+  right: 1.5rem;
+  z-index: 15;
+  pointer-events: auto;
 }
 
 .explorer__chrome {

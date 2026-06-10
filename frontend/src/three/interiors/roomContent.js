@@ -3,6 +3,7 @@ import { addMesh, woodMat, neonMat } from './buildRoom.js'
 import { createKrakenbyteStage } from './deckStage.js'
 import { createBassStack } from './characters.js'
 import { createGhostCaptain, createQuillBot } from './characters.js'
+import { createCaptainsLogArtifact } from './artifactExperiences/index.js'
 
 const PINK = 0xff00ff
 const CYAN = 0x00ffcc
@@ -63,6 +64,12 @@ function createTerminal(parent, position, label, accent) {
 
 export function populateCaptainsCabin(room, w, d) {
   room.add(createGhostCaptain())
+
+  const deskZ = -d / 2 + 1.8
+  const logArtifact = createCaptainsLogArtifact()
+  logArtifact.position.set(0, 0.92, deskZ)
+  room.add(logArtifact)
+  room.userData.roomArtifact = logArtifact
 
   const mapTable = addMesh(room, new THREE.CylinderGeometry(0.9, 1.0, 0.7, 16), woodMat(0x4a3020), [2, 0.35, 1.5])
   addMesh(mapTable, new THREE.CylinderGeometry(0.75, 0.75, 0.02, 16), new THREE.MeshStandardMaterial({
