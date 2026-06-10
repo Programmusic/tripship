@@ -114,12 +114,41 @@ export const mockArtifacts = [
   },
 ]
 
+export const CAPTAIN_LOG_WELCOME_SLUG = 'welcome-aboard-me-hearties'
+
 export const mockBlogPosts = [
   {
     id: 1,
+    slug: CAPTAIN_LOG_WELCOME_SLUG,
+    title: 'Welcome Aboard, Me Hearties!',
+    excerpt: 'Ye found the ship. Good. Captain Flystyle welcomes ye to Trip Ship — unsocial media for the crew who were actually there.',
+    featured: true,
+    content: `Ahoy me hearties,
+
+**Welcome aboard the Trip Ship.**
+
+If ye be readin' this, yer name made **The List** — or someone vouched for ye. Either way, ye're family now. No algorithms. No randos. No landlubbers scrollin' through yer memories. Just the crew.
+
+**What be aboard:**
+- **Arrrrrtifacts** — old fliers, posters & buried rave treasure from back in the day
+- **Memory Hold** — spin yer yarn about the warehouse, the carnival, the free party
+- **Deck Sessions** — bass, bins & mixes rigged to the masts
+- **The List** — invite yer mates. If their name ain't here, they ain't boardin'
+
+This log be where I scribble what's happenin' now — voyages, orders, and the odd rant from the helm. Read it. Share it. Don't spill it to the press.
+
+We built this for the ones who remember when the subs hit and the whole deck bounced. The sound system family.
+
+**Welcome aboard, me hearties. Stay seaworthy.**
+
+**Captain Flystyle** ☠`,
+    createdAt: '2026-06-09T12:00:00.000Z',
+  },
+  {
+    id: 4,
     slug: 'welcome-aboard-unsocial-media',
-    title: 'Welcome Aboard, Unsocial Media',
-    excerpt: 'This ain\'t Facebook, matey. Trip Ship Unsocial Media be invite-only. Yer mate puts yer name on the list or ye swim home.',
+    title: 'Unsocial Media — What That Means',
+    excerpt: 'This ain\'t Facebook, matey. Trip Ship be invite-only. Yer mate puts yer name on the list or ye swim home.',
     content: `Ahoy crew,
 
 So ye found the ship. Good. This be **Unsocial Media** — no algorithms, no ads, no randos slitherin' aboard.
