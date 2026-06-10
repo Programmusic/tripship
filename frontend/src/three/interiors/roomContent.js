@@ -3,7 +3,7 @@ import { addMesh, woodMat, neonMat } from './buildRoom.js'
 import { createKrakenbyteStage } from './deckStage.js'
 import { createBassStack } from './characters.js'
 import { createGhostCaptain, createQuillBot } from './characters.js'
-import { createCaptainsLogArtifact } from './artifactExperiences/index.js'
+import { createCaptainsLogArtifact, createCaptainsLogDeskSign } from './artifactExperiences/index.js'
 
 const PINK = 0xff00ff
 const CYAN = 0x00ffcc
@@ -67,9 +67,21 @@ export function populateCaptainsCabin(room, w, d) {
 
   const deskZ = -d / 2 + 1.8
   const logArtifact = createCaptainsLogArtifact()
-  logArtifact.position.set(0, 0.92, deskZ)
+  logArtifact.position.set(0, 0.96, deskZ)
   room.add(logArtifact)
   room.userData.roomArtifact = logArtifact
+
+  const sign = createCaptainsLogDeskSign()
+  sign.position.set(0, 2.35, deskZ - 0.15)
+  room.add(sign)
+  room.userData.logSign = sign
+
+  const deskSpot = new THREE.SpotLight(0xc9a227, 35, 14, Math.PI / 5, 0.35, 0.8)
+  deskSpot.position.set(0, 3.3, deskZ + 2.5)
+  deskSpot.target.position.set(0, 0.95, deskZ)
+  room.add(deskSpot)
+  room.add(deskSpot.target)
+  room.userData.deskSpot = deskSpot
 
   const mapTable = addMesh(room, new THREE.CylinderGeometry(0.9, 1.0, 0.7, 16), woodMat(0x4a3020), [2, 0.35, 1.5])
   addMesh(mapTable, new THREE.CylinderGeometry(0.75, 0.75, 0.02, 16), new THREE.MeshStandardMaterial({

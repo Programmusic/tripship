@@ -26,7 +26,7 @@ export function getArtifactTypes() {
   return Object.keys(EXPERIENCES)
 }
 
-export { createCaptainsLogArtifact } from './captainsLogExperience.js'
+export { createCaptainsLogArtifact, createCaptainsLogDeskSign } from './captainsLogExperience.js'
 export {
   findRoomArtifact,
   mountArtifactExperience,

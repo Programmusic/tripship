@@ -148,6 +148,42 @@ function createEchoWord(text, color) {
   return sprite
 }
 
+function logSignTexture() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 128
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = 'rgba(0,0,0,0)'
+  ctx.fillRect(0, 0, 512, 128)
+  ctx.font = 'bold 52px Georgia, serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#c9a227'
+  ctx.shadowColor = '#ffee88'
+  ctx.shadowBlur = 24
+  ctx.fillText("CAPTAIN'S LOG", 256, 64)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+export function createCaptainsLogDeskSign() {
+  const tex = logSignTexture()
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.4, 0.55),
+    new THREE.MeshStandardMaterial({
+      map: tex,
+      emissive: GOLD,
+      emissiveMap: tex,
+      emissiveIntensity: 2.5,
+      transparent: true,
+      side: THREE.DoubleSide,
+    })
+  )
+  sign.userData.pulse = 0.3
+  return sign
+}
+
 export function createCaptainsLogArtifact() {
   const artifact = new THREE.Group()
   artifact.name = 'captains-log-artifact'
@@ -155,30 +191,38 @@ export function createCaptainsLogArtifact() {
   artifact.userData.artifactType = 'captains-log'
   artifact.userData.artifactLabel = "Open the Captain's Log"
 
-  addMesh(artifact, new THREE.BoxGeometry(0.55, 0.12, 0.75), woodMat(0x3a2818), [0, 0.06, 0])
+  addMesh(artifact, new THREE.BoxGeometry(1.1, 0.22, 1.5), woodMat(0x3a2818), [0, 0.11, 0])
   const pages = addMesh(
     artifact,
-    new THREE.BoxGeometry(0.48, 0.08, 0.68),
-    new THREE.MeshStandardMaterial({ color: 0xe8dcc8, emissive: GOLD, emissiveIntensity: 0.5, roughness: 0.9 }),
-    [0, 0.14, 0.02]
+    new THREE.BoxGeometry(0.96, 0.14, 1.36),
+    new THREE.MeshStandardMaterial({ color: 0xe8dcc8, emissive: GOLD, emissiveIntensity: 1.4, roughness: 0.9 }),
+    [0, 0.28, 0.04]
   )
   pages.userData.pulse = 0
 
-  addMesh(artifact, new THREE.BoxGeometry(0.08, 0.18, 0.75), woodMat(0x2a1a0a), [-0.28, 0.04, 0])
+  addMesh(artifact, new THREE.BoxGeometry(0.16, 0.34, 1.5), woodMat(0x2a1a0a), [-0.56, 0.08, 0])
 
   const ring = addMesh(
     artifact,
-    new THREE.TorusGeometry(0.45, 0.012, 8, 48),
-    new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending }),
-    [0, 0.2, 0],
+    new THREE.TorusGeometry(0.85, 0.022, 8, 48),
+    new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending }),
+    [0, 0.42, 0],
     [Math.PI / 2, 0, 0]
   )
   ring.userData.animType = 'artifactRing'
 
-  addMesh(artifact, new THREE.ConeGeometry(0.02, 0.22, 6), neonMat(GOLD, 1.2), [0.32, 0.2, 0.25], [0.4, 0, -0.5])
+  addMesh(artifact, new THREE.ConeGeometry(0.04, 0.4, 6), neonMat(GOLD, 2.2), [0.64, 0.38, 0.45], [0.4, 0, -0.5])
 
-  const glow = new THREE.PointLight(GOLD, 5, 5)
-  glow.position.set(0, 0.3, 0.2)
+  const beam = addMesh(
+    artifact,
+    new THREE.CylinderGeometry(0.02, 0.18, 1.6, 16, 1, true),
+    new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+    [0, 1.1, 0]
+  )
+  beam.userData.animType = 'logBeam'
+
+  const glow = new THREE.PointLight(GOLD, 14, 9)
+  glow.position.set(0, 0.5, 0.3)
   artifact.add(glow)
   artifact.userData.artifactGlow = glow
 

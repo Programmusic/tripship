@@ -3,6 +3,7 @@ import {
   buildRoomShell,
   createTerminal,
   createRoomMeta,
+  createCaptainsCabinMeta,
   addMesh,
   woodMat,
   neonMat,
@@ -63,7 +64,7 @@ function buildCaptainsCabin(accent) {
 
   populateCaptainsCabin(room, w, d)
 
-  return { room, meta: createRoomMeta(w, d) }
+  return { room, meta: createCaptainsCabinMeta(w, d) }
 }
 
 function buildArtifacts(accent) {
@@ -233,7 +234,11 @@ export function animateInterior(group, time) {
       obj.material.opacity = 0.3 + Math.sin(time * 3) * 0.2
     }
     if (obj.userData.artifactGlow) {
-      obj.userData.artifactGlow.intensity = 4 + Math.sin(time * 4) * 2
+      obj.userData.artifactGlow.intensity = 10 + Math.sin(time * 4) * 4
+    }
+    if (obj.userData.animType === 'logBeam') {
+      obj.material.opacity = 0.12 + Math.sin(time * 2.5) * 0.08
+      obj.rotation.y = time * 0.4
     }
     if (obj.userData.pulse !== undefined && !obj.userData.animType) {
       const s = 1 + Math.sin(time * 3 + obj.userData.pulse) * 0.2
@@ -274,6 +279,11 @@ export function animateInterior(group, time) {
     const onBeat = Math.sin(beat) > 0
     strobe.intensity = onBeat ? 22 : 8
     strobeCyan.intensity = onBeat ? 8 : 18
+  }
+
+  const deskSpot = group?.userData?.deskSpot
+  if (deskSpot) {
+    deskSpot.intensity = 30 + Math.sin(time * 2) * 8
   }
 
   const fireLight = group?.userData?.fireLight

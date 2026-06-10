@@ -130,15 +130,23 @@ export function createTerminal(parent, position, label, accent) {
   return screen
 }
 
+function aimMetaAt(meta, focusPoint) {
+  const spawn = meta.spawn
+  const dx = focusPoint.x - spawn.x
+  const dy = focusPoint.y - spawn.y
+  const dz = focusPoint.z - spawn.z
+  const horiz = Math.sqrt(dx * dx + dz * dz)
+  meta.spawnYaw = Math.atan2(-dx, -dz)
+  meta.spawnPitch = Math.atan2(dy, horiz)
+  meta.focusPoint = focusPoint
+  return meta
+}
+
 export function createRoomMeta(width, depth) {
   const margin = 0.45
   const spawn = new THREE.Vector3(0, 1.72, depth / 2 - 0.85)
   const focusPoint = new THREE.Vector3(0, 1.4, -depth / 2 + 2.5)
-  const horiz = Math.sqrt(focusPoint.x ** 2 + (focusPoint.z - spawn.z) ** 2)
-  const dirY = focusPoint.y - spawn.y
-  const dirZ = focusPoint.z - spawn.z
-
-  return {
+  const meta = {
     spawn,
     exitZ: depth / 2 - 0.6,
     bounds: {
@@ -147,9 +155,16 @@ export function createRoomMeta(width, depth) {
       minZ: -depth / 2 + margin,
       maxZ: depth / 2 - margin,
     },
-    spawnYaw: Math.atan2(-focusPoint.x, -dirZ),
-    spawnPitch: Math.atan2(dirY, horiz),
-    focusPoint,
     entryFov: 58,
   }
+  return aimMetaAt(meta, focusPoint)
+}
+
+/** Captain's Cabin — spawn looks straight at the log on the back-wall desk */
+export function createCaptainsCabinMeta(width, depth) {
+  const meta = createRoomMeta(width, depth)
+  const deskZ = -depth / 2 + 1.8
+  aimMetaAt(meta, new THREE.Vector3(0, 1.05, deskZ))
+  meta.entryFov = 64
+  return meta
 }

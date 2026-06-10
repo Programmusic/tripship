@@ -42,7 +42,7 @@
           <span>☠ DJ Krakenbyte on the decks</span><span>·</span><span>E to open mixes</span>
         </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'captains-cabin'">
-          <span>Find the glowing log on the desk</span><span>·</span><span>E to read</span>
+          <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
         </template>
         <template v-else-if="viewMode === 'interior'">
           <span>WASD move</span><span>·</span><span>Mouse look</span><span>·</span><span>E interact</span>
