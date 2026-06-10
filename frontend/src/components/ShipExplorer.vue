@@ -32,11 +32,11 @@
         <template v-else-if="viewMode === 'peek'">
           <span>Peep inside</span><span>·</span><span>Enter when ready</span>
         </template>
-        <template v-else-if="viewMode === 'artifact'">
-          <span>☠ Captain Flystyle writes...</span><span>·</span><span>E for full log</span><span>·</span><span>Esc to leave</span>
+        <template v-else-if="viewMode === 'artifact' && logComplete">
+          <span>Log complete</span><span>·</span><span>E to open full log</span><span>·</span><span>Esc to leave</span>
         </template>
-        <template v-else-if="viewMode === 'artifact-enter'">
-          <span>Enterin' the echo...</span>
+        <template v-else-if="viewMode === 'artifact' || viewMode === 'artifact-enter'">
+          <span>☠ Captain Flystyle writes...</span><span>·</span><span>Esc to leave</span>
         </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'mixes'">
           <span>☠ DJ Krakenbyte on the decks</span><span>·</span><span>E to open mixes</span>
@@ -66,16 +66,40 @@
     </Transition>
 
     <Transition name="hud">
-      <div v-if="(viewMode === 'interior' || viewMode === 'artifact') && interactPrompt" class="explorer__interact">
+      <div
+        v-if="(viewMode === 'interior' || (viewMode === 'artifact' && logComplete && !isMobile)) && interactPrompt"
+        class="explorer__interact"
+      >
         <span class="interact-key">E</span>
         <span>{{ interactPrompt }}</span>
       </div>
     </Transition>
 
-    <Transition name="hud">
-      <div v-if="viewMode === 'artifact'" class="explorer__artifact-title">
-        <p class="artifact-title__eyebrow">☠ Echo Room ☠</p>
-        <h2>Captain's Log</h2>
+    <Transition name="echo">
+      <div v-if="isEchoRoom" class="echo-room">
+        <div class="echo-room__wash" />
+        <div
+          v-for="(echo, i) in visibleEchoes"
+          :key="echo.text"
+          class="echo-room__ghost"
+          :style="{ top: `${18 + i * 14}%` }"
+        >
+          {{ echo.text }}
+        </div>
+        <div class="echo-room__parchment">
+          <p class="echo-room__eyebrow">☠ Echo Room ☠</p>
+          <h2 class="echo-room__title">Captain's Log</h2>
+          <pre class="echo-room__text">{{ logRevealText }}<span v-if="!logComplete" class="echo-room__cursor">|</span></pre>
+          <Transition name="hud">
+            <button
+              v-if="logComplete"
+              class="echo-room__continue btn"
+              @click="openFullLog"
+            >
+              Continue to full log →
+            </button>
+          </Transition>
+        </div>
       </div>
     </Transition>
 
@@ -94,14 +118,6 @@
         {{ interactPrompt }}
       </button>
     </div>
-
-    <button
-      v-if="(viewMode === 'artifact' || viewMode === 'artifact-enter') && isMobile && interactPrompt"
-      class="touch-action touch-action--artifact btn btn--pink"
-      @click="doInteract"
-    >
-      {{ interactPrompt }}
-    </button>
 
     <div v-if="!ready" class="explorer__loading">Boardin' the galleon...</div>
   </div>
@@ -144,6 +160,9 @@ import {
   updateCameraTransition,
   computeExperienceCameraWorld,
   flyCameraOut,
+  CAPTAINS_LOG_ECHOES,
+  getLogRevealState,
+  getRevealedLogText,
 } from '@/three/interiors/artifactExperiences/index.js'
 
 const router = useRouter()
@@ -156,6 +175,18 @@ const viewMode = ref('orbit')
 const enterFade = ref(0)
 const interactPrompt = ref('')
 const isMobile = ref(false)
+const logRevealText = ref('')
+const logProgress = ref(0)
+const logComplete = ref(false)
+
+const isEchoRoom = computed(() =>
+  viewMode.value === 'artifact' || viewMode.value === 'artifact-enter'
+)
+const visibleEchoes = computed(() =>
+  CAPTAINS_LOG_ECHOES.filter(
+    (e) => logProgress.value >= e.at && logProgress.value < e.at + 0.14
+  )
+)
 
 let renderer, labelRenderer, composer, scene, camera, ship, controls, hotspots, clock
 let interiorRooms, interiorGroup, interiorMeta, fpsController
@@ -419,13 +450,18 @@ function enterArtifactExperience(artifactType) {
   activeExperience.userData.startTime = clock.getElapsedTime()
   hiddenRoomChildren = hideRoomForExperience(interiorGroup, activeExperience)
 
-  scene.fog = new THREE.FogExp2(0x020408, 0.055)
-  scene.background = new THREE.Color(0x020408)
-  renderer.toneMappingExposure = 1.65
+  if (interiorLighting) interiorLighting.visible = false
+  scene.fog = new THREE.FogExp2(0x0a0604, 0.035)
+  scene.background = new THREE.Color(0x0a0604)
+  renderer.toneMappingExposure = 0.88
   if (bloomPass) {
-    bloomPass.strength = isMobile.value ? 0.9 : 1.25
-    bloomPass.threshold = 0.18
+    bloomPass.strength = 0
+    bloomPass.threshold = 1
   }
+
+  logRevealText.value = ''
+  logProgress.value = 0
+  logComplete.value = false
 
   const camWorld = computeExperienceCameraWorld(mounted.anchor, def.getCamera())
   artifactCameraTransition = createCameraTransition(
@@ -475,6 +511,11 @@ function finishExitArtifact() {
     bloomPass.strength = isMobile.value ? 0.5 : 0.75
     bloomPass.threshold = 0.35
   }
+  if (interiorLighting) interiorLighting.visible = true
+
+  logRevealText.value = ''
+  logProgress.value = 0
+  logComplete.value = false
 
   fpsController.enable(savedInteriorCam.position, savedInteriorCam.yaw, savedInteriorCam.pitch)
   if (!isMobile.value) fpsController.requestPointerLock()
@@ -489,10 +530,16 @@ function finishExitArtifact() {
   viewMode.value = 'interior'
 }
 
+function openFullLog() {
+  if (activeExperienceDef?.route) {
+    router.push(activeExperienceDef.route)
+  }
+}
+
 function doInteract() {
   if (viewMode.value === 'artifact' && activeExperienceDef) {
     if (activeExperienceDef.isComplete(activeExperience)) {
-      router.push(activeExperienceDef.route)
+      openFullLog()
     }
     return
   }
@@ -553,10 +600,18 @@ function onPointerDown(event) {
   }
 }
 
+function updateLogReveal(time) {
+  if (!activeExperience) return
+  const state = getLogRevealState(activeExperience.userData.startTime, time)
+  logRevealText.value = getRevealedLogText(state.revealChars)
+  logProgress.value = state.progress
+  logComplete.value = state.isComplete
+}
+
 function updateInteractPrompt() {
   if (viewMode.value === 'artifact' && activeExperienceDef) {
     interactPrompt.value = activeExperienceDef.isComplete(activeExperience)
-      ? activeExperienceDef.completeHint
+      ? 'Continue to full log'
       : ''
     return
   }
@@ -634,11 +689,13 @@ function animate() {
   if (viewMode.value === 'artifact-enter' && artifactCameraTransition) {
     const done = updateCameraTransition(artifactCameraTransition, camera, delta)
     activeExperienceDef?.animate(activeExperience, time)
+    updateLogReveal(time)
     if (done) viewMode.value = 'artifact'
   }
 
   if (viewMode.value === 'artifact') {
     activeExperienceDef?.animate(activeExperience, time)
+    updateLogReveal(time)
     updateInteractPrompt()
   }
 
@@ -771,40 +828,154 @@ onUnmounted(cleanup)
 }
 
 .explorer__vignette--artifact {
-  background: radial-gradient(ellipse at center, transparent 35%, rgba(2, 4, 8, 0.85) 100%);
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(10, 6, 4, 0.92) 100%);
+  z-index: 3;
 }
 
-.explorer__artifact-title {
+.echo-room {
   position: absolute;
-  top: 4.5rem;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1rem 2rem;
+  pointer-events: none;
+}
+
+.echo-room__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 80%, rgba(255, 170, 80, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at center, rgba(20, 12, 8, 0.3) 0%, rgba(8, 5, 3, 0.85) 100%);
+  pointer-events: none;
+}
+
+.echo-room__ghost {
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  text-align: center;
-  pointer-events: none;
-  z-index: 14;
-}
-
-.artifact-title__eyebrow {
-  font-size: 0.65rem;
-  color: var(--neon-cyan);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  margin-bottom: 0.25rem;
-}
-
-.explorer__artifact-title h2 {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  color: var(--gold);
-  text-shadow: 0 0 24px rgba(201, 162, 39, 0.5);
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  color: rgba(201, 162, 39, 0.14);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  pointer-events: none;
+  animation: echo-drift 3s ease-in-out infinite alternate;
+  white-space: nowrap;
 }
 
-.touch-action--artifact {
-  position: absolute;
-  bottom: 2rem;
-  right: 1.5rem;
-  z-index: 15;
+@keyframes echo-drift {
+  from { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+  to { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+}
+
+.echo-room__parchment {
+  position: relative;
+  width: min(420px, calc(100% - 1.5rem));
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+  padding: 1.75rem 1.5rem 1.5rem;
+  background:
+    linear-gradient(165deg, #f0e6d0 0%, #e8dcc8 40%, #d8c8a8 100%);
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px rgba(90, 64, 48, 0.35),
+    0 8px 40px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   pointer-events: auto;
+}
+
+.echo-room__parchment::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 35px,
+    rgba(139, 100, 60, 0.08) 35px,
+    rgba(139, 100, 60, 0.08) 36px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.echo-room__eyebrow {
+  position: relative;
+  font-size: 0.6rem;
+  color: #8a7048;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 0.35rem;
+}
+
+.echo-room__title {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 5vw, 1.75rem);
+  color: #3a2818;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  text-shadow: none;
+}
+
+.echo-room__text {
+  position: relative;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(0.85rem, 3.2vw, 1rem);
+  font-style: italic;
+  line-height: 1.65;
+  color: #1a1410;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.echo-room__cursor {
+  display: inline-block;
+  color: #c9a227;
+  font-style: normal;
+  font-weight: bold;
+  animation: cursor-blink 0.8s step-end infinite;
+  margin-left: 1px;
+}
+
+@keyframes cursor-blink {
+  50% { opacity: 0; }
+}
+
+.echo-room__continue {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(26, 20, 16, 0.92);
+  border: 1px solid #c9a227;
+  color: #e8dcc8;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.echo-room__continue:hover {
+  background: #2a2018;
+  box-shadow: 0 0 20px rgba(201, 162, 39, 0.25);
+}
+
+.echo-enter-active,
+.echo-leave-active {
+  transition: opacity 0.6s ease;
+}
+
+.echo-enter-from,
+.echo-leave-to {
+  opacity: 0;
 }
 
 .explorer__chrome {
