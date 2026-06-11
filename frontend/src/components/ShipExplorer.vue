@@ -45,6 +45,11 @@
           <span v-if="deckAudioBlocked">·</span>
           <button v-if="deckAudioBlocked" class="deck-audio-btn" @click="resumeDeckAudio">▶ Start deck audio</button>
         </template>
+        <template v-else-if="viewMode === 'interior' && selected?.id === 'aaaarrifacts'">
+          <span>☠ Arrrrrtifacts vault</span><span>·</span><span>E to open vault</span>
+          <span v-if="artifactsAudioBlocked">·</span>
+          <button v-if="artifactsAudioBlocked" class="deck-audio-btn" @click="resumeArtifactsAudio">▶ Start vault audio</button>
+        </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'captains-cabin'">
           <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
         </template>
@@ -124,6 +129,14 @@
       ▶ Start deck audio
     </button>
 
+    <button
+      v-if="viewMode === 'interior' && selected?.id === 'aaaarrifacts' && artifactsAudioBlocked && isMobile"
+      class="deck-audio-fab btn btn--pink"
+      @click="resumeArtifactsAudio"
+    >
+      ▶ Start vault audio
+    </button>
+
     <TransitionGroup name="slogan" tag="div" class="room-slogans" aria-hidden="true">
       <p
         v-for="slogan in floatingSlogans"
@@ -178,6 +191,11 @@ import {
   isDeckAudioPlaying,
 } from '@/utils/deckYouTube.js'
 import {
+  startArtifactsAudio,
+  stopArtifactsAudio,
+  isArtifactsAudioPlaying,
+} from '@/utils/artifactsYouTube.js'
+import {
   startShipAudio,
   pauseShipAudio,
   isShipAudioPlaying,
@@ -211,6 +229,7 @@ const logRevealText = ref('')
 const logProgress = ref(0)
 const logComplete = ref(false)
 const deckAudioBlocked = ref(false)
+const artifactsAudioBlocked = ref(false)
 const shipAudioBlocked = ref(false)
 const floatingSlogans = ref([])
 
@@ -408,11 +427,25 @@ function releaseRoom() {
   tryStartShipAudio()
 }
 
+function stopOtherRoomAudio(roomId) {
+  if (roomId !== 'mixes') {
+    stopDeckAudio()
+    deckAudioBlocked.value = false
+  }
+  if (roomId !== 'aaaarrifacts') {
+    stopArtifactsAudio()
+    artifactsAudioBlocked.value = false
+  }
+}
+
 function enterRoom() {
   if (!selected.value || !activeFlight) return
+  pauseShipAudio()
+  stopOtherRoomAudio(selected.value.id)
   if (selected.value.id === 'mixes') {
-    pauseShipAudio()
     tryStartDeckAudio()
+  } else if (selected.value.id === 'aaaarrifacts') {
+    tryStartArtifactsAudio()
   }
   viewMode.value = 'entering'
   startEnterFlight(activeFlight)
@@ -429,8 +462,23 @@ async function tryStartDeckAudio() {
   }
 }
 
+async function tryStartArtifactsAudio() {
+  try {
+    await startArtifactsAudio(isMobile.value ? 55 : 65)
+    window.setTimeout(() => {
+      artifactsAudioBlocked.value = !isArtifactsAudioPlaying()
+    }, 800)
+  } catch {
+    artifactsAudioBlocked.value = true
+  }
+}
+
 function resumeDeckAudio() {
   tryStartDeckAudio()
+}
+
+function resumeArtifactsAudio() {
+  tryStartArtifactsAudio()
 }
 
 function startInteriorWalk() {
@@ -481,8 +529,11 @@ function startInteriorWalk() {
 
   currentInteriorId = loc.id
   pauseShipAudio()
+  stopOtherRoomAudio(loc.id)
   if (loc.id === 'mixes' && !isDeckAudioPlaying()) {
     tryStartDeckAudio()
+  } else if (loc.id === 'aaaarrifacts' && !isArtifactsAudioPlaying()) {
+    tryStartArtifactsAudio()
   }
 
   showEntrySlogans(loc)
@@ -497,6 +548,10 @@ function exitInterior() {
   if (currentInteriorId === 'mixes') {
     stopDeckAudio()
     deckAudioBlocked.value = false
+  }
+  if (currentInteriorId === 'aaaarrifacts') {
+    stopArtifactsAudio()
+    artifactsAudioBlocked.value = false
   }
 
   enterFade.value = 1

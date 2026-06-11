@@ -4,6 +4,9 @@ export const SHIP_YOUTUBE_ID = 'YANW7wef-po'
 /** Deck Sessions set — https://youtu.be/WF6TMVkPg2k */
 export const DECK_YOUTUBE_ID = 'WF6TMVkPg2k'
 
+/** Arrrrrtifacts vault — https://youtu.be/RkfwoAr-zPI */
+export const ARTIFACTS_YOUTUBE_ID = 'RkfwoAr-zPI'
+
 const PLAYERS = new Map()
 let apiPromise = null
 
