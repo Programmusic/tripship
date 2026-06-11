@@ -359,10 +359,10 @@ function init() {
   animate()
 }
 
-async function tryStartShipAudio() {
+async function tryStartShipAudio({ newTrack = true } = {}) {
   if (viewMode.value !== 'orbit') return
   try {
-    await startShipAudio(isMobile.value ? 50 : 60)
+    await startShipAudio(isMobile.value ? 50 : 60, { newTrack })
     window.setTimeout(() => {
       shipAudioBlocked.value = !isShipAudioPlaying()
     }, 800)
@@ -372,7 +372,7 @@ async function tryStartShipAudio() {
 }
 
 function resumeShipAudio() {
-  tryStartShipAudio()
+  tryStartShipAudio({ newTrack: false })
 }
 
 function clearEntrySlogans() {

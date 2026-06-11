@@ -121,10 +121,10 @@ function init() {
   animate()
 }
 
-async function tryStartShipAudio() {
+async function tryStartShipAudio({ newTrack = true } = {}) {
   try {
     const isMobile = window.matchMedia('(max-width: 768px)').matches
-    await startShipAudio(isMobile ? 45 : 55)
+    await startShipAudio(isMobile ? 45 : 55, { newTrack })
     window.setTimeout(() => {
       shipAudioBlocked.value = !isShipAudioPlaying()
     }, 800)
@@ -134,7 +134,7 @@ async function tryStartShipAudio() {
 }
 
 function resumeShipAudio() {
-  tryStartShipAudio()
+  tryStartShipAudio({ newTrack: false })
 }
 
 function animate() {

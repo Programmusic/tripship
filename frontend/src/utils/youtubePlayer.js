@@ -1,6 +1,3 @@
-/** Main galleon fly-through — https://youtu.be/YANW7wef-po */
-export const SHIP_YOUTUBE_ID = 'YANW7wef-po'
-
 /** Deck Sessions set — https://youtu.be/WF6TMVkPg2k */
 export const DECK_YOUTUBE_ID = 'WF6TMVkPg2k'
 
@@ -52,10 +49,17 @@ function createHost(key) {
 export async function preloadYoutubePlayer(key, videoId) {
   await loadYouTubeApi()
   const entry = PLAYERS.get(key)
-  if (entry?.instance?.getPlayerState) return entry.instance
-  if (entry?.loading) return entry.loading
+  if (entry?.videoId && entry.videoId !== videoId) {
+    destroyYoutubePlayer(key)
+  }
 
-  const host = entry?.host ?? createHost(key)
+  const current = PLAYERS.get(key)
+  if (current?.instance?.getPlayerState && current.videoId === videoId) {
+    return current.instance
+  }
+  if (current?.loading && current.videoId === videoId) return current.loading
+
+  const host = current?.host ?? createHost(key)
   const loading = new Promise((resolve) => {
     new window.YT.Player(host, {
       videoId,
