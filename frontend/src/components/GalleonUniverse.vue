@@ -5,9 +5,18 @@
     <div class="universe-wrap__hud" aria-hidden="true">
       <span class="hud-coords">RA 14h 32m · DEC +42° · WARP {{ warpDisplay }}</span>
     </div>
-    <RouterLink to="/ship" class="universe-wrap__board btn btn--pink">
-      ☠ Board the Ship
-    </RouterLink>
+    <div class="universe-wrap__actions">
+      <button
+        v-if="shipAudioBlocked"
+        class="universe-wrap__audio btn btn--ghost"
+        @click="resumeShipAudio"
+      >
+        ▶ Start ship audio
+      </button>
+      <RouterLink to="/ship" class="universe-wrap__board btn btn--pink" @click="pauseShipAudio">
+        ☠ Board the Ship
+      </RouterLink>
+    </div>
     <div v-if="!ready" class="universe-wrap__loading">
       <span>Hoistin' the galleon into the void...</span>
     </div>
@@ -22,11 +31,18 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { buildGalleon, animateGalleon } from '@/three/buildGalleon.js'
 import { createUniverse, animateUniverse } from '@/three/createUniverse.js'
+import {
+  startShipAudio,
+  pauseShipAudio,
+  isShipAudioPlaying,
+  destroyShipPlayer,
+} from '@/utils/shipYouTube.js'
 
 const containerRef = ref(null)
 const canvasRef = ref(null)
 const ready = ref(false)
 const warpDisplay = ref('7.2')
+const shipAudioBlocked = ref(false)
 
 let renderer, composer, scene, camera, ship, universe
 let animId = 0
@@ -95,9 +111,30 @@ function init() {
   )
   composer.addPass(bloom)
 
+  canvas.addEventListener('click', () => {
+    if (shipAudioBlocked.value) resumeShipAudio()
+  })
+
   clock = new THREE.Clock()
   ready.value = true
+  tryStartShipAudio()
   animate()
+}
+
+async function tryStartShipAudio() {
+  try {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    await startShipAudio(isMobile ? 45 : 55)
+    window.setTimeout(() => {
+      shipAudioBlocked.value = !isShipAudioPlaying()
+    }, 800)
+  } catch {
+    shipAudioBlocked.value = true
+  }
+}
+
+function resumeShipAudio() {
+  tryStartShipAudio()
 }
 
 function animate() {
@@ -138,6 +175,7 @@ function onResize() {
 function cleanup() {
   cancelAnimationFrame(animId)
   resizeObserver?.disconnect()
+  destroyShipPlayer()
 
   composer?.dispose()
   renderer?.dispose()
@@ -206,12 +244,24 @@ onUnmounted(cleanup)
   text-transform: uppercase;
 }
 
-.universe-wrap__board {
+.universe-wrap__actions {
   position: absolute;
   bottom: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.universe-wrap__audio {
+  font-size: 0.7rem;
+  padding: 0.5rem 1rem;
+}
+
+.universe-wrap__board {
   font-size: 0.85rem;
   padding: 0.85rem 1.75rem;
   box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);

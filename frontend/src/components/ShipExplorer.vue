@@ -25,6 +25,8 @@
       <div class="explorer__hints">
         <template v-if="viewMode === 'orbit'">
           <span>Drag to spin</span><span>·</span><span>Scroll to zoom</span><span>·</span><span>Tap a door</span>
+          <span v-if="shipAudioBlocked">·</span>
+          <button v-if="shipAudioBlocked" class="deck-audio-btn" @click="resumeShipAudio">▶ Start ship audio</button>
         </template>
         <template v-else-if="viewMode === 'flying'">
           <span>Sailin' to the door...</span>
@@ -154,12 +156,16 @@ import {
 } from '@/three/interiors/interiorManager.js'
 import { animateInterior, findInteractable, isNearExit } from '@/three/interiors/interiorScenes.js'
 import {
-  preloadDeckPlayer,
   startDeckAudio,
   stopDeckAudio,
   isDeckAudioPlaying,
-  destroyDeckPlayer,
 } from '@/utils/deckYouTube.js'
+import {
+  startShipAudio,
+  pauseShipAudio,
+  isShipAudioPlaying,
+} from '@/utils/shipYouTube.js'
+import { destroyAllYoutubePlayers } from '@/utils/youtubePlayer.js'
 import {
   getArtifactExperience,
   findRoomArtifact,
@@ -188,6 +194,7 @@ const logRevealText = ref('')
 const logProgress = ref(0)
 const logComplete = ref(false)
 const deckAudioBlocked = ref(false)
+const shipAudioBlocked = ref(false)
 
 let currentInteriorId = null
 
@@ -310,7 +317,24 @@ function init() {
 
   clock = new THREE.Clock()
   ready.value = true
+  tryStartShipAudio()
   animate()
+}
+
+async function tryStartShipAudio() {
+  if (viewMode.value !== 'orbit') return
+  try {
+    await startShipAudio(isMobile.value ? 50 : 60)
+    window.setTimeout(() => {
+      shipAudioBlocked.value = !isShipAudioPlaying()
+    }, 800)
+  } catch {
+    shipAudioBlocked.value = true
+  }
+}
+
+function resumeShipAudio() {
+  tryStartShipAudio()
 }
 
 function selectRoom(loc) {
@@ -319,6 +343,7 @@ function selectRoom(loc) {
   hideAllInteriors(interiorRooms.rooms)
   selected.value = loc
   viewMode.value = 'flying'
+  pauseShipAudio()
   controls.enabled = false
 
   activeFlight = createDoorFlight(camera, controls, ship, loc)
@@ -332,11 +357,13 @@ function releaseRoom() {
   activeFlight = null
   controls.enabled = true
   enterFade.value = 0
+  tryStartShipAudio()
 }
 
 function enterRoom() {
   if (!selected.value || !activeFlight) return
   if (selected.value.id === 'mixes') {
+    pauseShipAudio()
     tryStartDeckAudio()
   }
   viewMode.value = 'entering'
@@ -405,6 +432,7 @@ function startInteriorWalk() {
   enterFade.value = 0
 
   currentInteriorId = loc.id
+  pauseShipAudio()
   if (loc.id === 'mixes' && !isDeckAudioPlaying()) {
     tryStartDeckAudio()
   }
@@ -460,6 +488,7 @@ function exitInterior() {
     viewMode.value = 'orbit'
     interactPrompt.value = ''
     enterFade.value = 0
+    tryStartShipAudio()
   }, 350)
 }
 
@@ -469,6 +498,7 @@ function enterArtifactExperience(artifactType) {
 
   fpsController.disable()
   document.exitPointerLock?.()
+  pauseShipAudio()
 
   savedInteriorCam = {
     position: camera.position.clone(),
@@ -624,6 +654,8 @@ function onPointerDown(event) {
     return
   }
   if (viewMode.value !== 'orbit') return
+
+  if (shipAudioBlocked.value) resumeShipAudio()
 
   const rect = canvasRef.value.getBoundingClientRect()
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
@@ -790,7 +822,7 @@ function cleanup() {
   canvasRef.value?.removeEventListener('pointerdown', onPointerDown)
   window.removeEventListener('keydown', onKeyDown)
   fpsController?.disable()
-  destroyDeckPlayer()
+  destroyAllYoutubePlayers()
   composer?.dispose()
   renderer?.dispose()
 }
