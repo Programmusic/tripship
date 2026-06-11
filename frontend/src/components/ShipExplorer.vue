@@ -40,6 +40,8 @@
         </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'mixes'">
           <span>☠ DJ Krakenbyte on the decks</span><span>·</span><span>E to open mixes</span>
+          <span v-if="deckAudioBlocked">·</span>
+          <button v-if="deckAudioBlocked" class="deck-audio-btn" @click="resumeDeckAudio">▶ Start deck audio</button>
         </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'captains-cabin'">
           <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
@@ -112,6 +114,14 @@
       </button>
     </div>
 
+    <button
+      v-if="viewMode === 'interior' && selected?.id === 'mixes' && deckAudioBlocked && isMobile"
+      class="deck-audio-fab btn btn--pink"
+      @click="resumeDeckAudio"
+    >
+      ▶ Start deck audio
+    </button>
+
     <div v-if="!ready" class="explorer__loading">Boardin' the galleon...</div>
   </div>
 </template>
@@ -144,6 +154,13 @@ import {
 } from '@/three/interiors/interiorManager.js'
 import { animateInterior, findInteractable, isNearExit } from '@/three/interiors/interiorScenes.js'
 import {
+  preloadDeckPlayer,
+  startDeckAudio,
+  stopDeckAudio,
+  isDeckAudioPlaying,
+  destroyDeckPlayer,
+} from '@/utils/deckYouTube.js'
+import {
   getArtifactExperience,
   findRoomArtifact,
   mountArtifactExperience,
@@ -170,6 +187,9 @@ const isMobile = ref(false)
 const logRevealText = ref('')
 const logProgress = ref(0)
 const logComplete = ref(false)
+const deckAudioBlocked = ref(false)
+
+let currentInteriorId = null
 
 const isEchoRoom = computed(() =>
   viewMode.value === 'artifact' || viewMode.value === 'artifact-enter'
@@ -316,8 +336,26 @@ function releaseRoom() {
 
 function enterRoom() {
   if (!selected.value || !activeFlight) return
+  if (selected.value.id === 'mixes') {
+    tryStartDeckAudio()
+  }
   viewMode.value = 'entering'
   startEnterFlight(activeFlight)
+}
+
+async function tryStartDeckAudio() {
+  try {
+    await startDeckAudio(isMobile.value ? 55 : 65)
+    window.setTimeout(() => {
+      deckAudioBlocked.value = !isDeckAudioPlaying()
+    }, 800)
+  } catch {
+    deckAudioBlocked.value = true
+  }
+}
+
+function resumeDeckAudio() {
+  tryStartDeckAudio()
 }
 
 function startInteriorWalk() {
@@ -365,11 +403,21 @@ function startInteriorWalk() {
   activeFlight = null
   controls.enabled = false
   enterFade.value = 0
+
+  currentInteriorId = loc.id
+  if (loc.id === 'mixes' && !isDeckAudioPlaying()) {
+    tryStartDeckAudio()
+  }
 }
 
 function exitInterior() {
   if (viewMode.value === 'artifact' || viewMode.value === 'artifact-enter') {
     finishExitArtifact()
+  }
+
+  if (currentInteriorId === 'mixes') {
+    stopDeckAudio()
+    deckAudioBlocked.value = false
   }
 
   enterFade.value = 1
@@ -388,6 +436,7 @@ function exitInterior() {
     })
     interiorGroup = null
     interiorMeta = null
+    currentInteriorId = null
     stars.visible = true
     dock.visible = true
     renderer.toneMappingExposure = 1.15
@@ -741,6 +790,7 @@ function cleanup() {
   canvasRef.value?.removeEventListener('pointerdown', onPointerDown)
   window.removeEventListener('keydown', onKeyDown)
   fpsController?.disable()
+  destroyDeckPlayer()
   composer?.dispose()
   renderer?.dispose()
 }
@@ -974,6 +1024,31 @@ onUnmounted(cleanup)
   color: var(--text-muted);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.deck-audio-btn {
+  background: none;
+  border: none;
+  color: var(--neon-cyan);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.deck-audio-btn:hover {
+  color: var(--gold);
+}
+
+.deck-audio-fab {
+  position: absolute;
+  bottom: 6.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 16;
+  pointer-events: auto;
+  font-size: 0.75rem;
 }
 
 .explorer__panel {
