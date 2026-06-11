@@ -124,6 +124,22 @@
       ▶ Start deck audio
     </button>
 
+    <TransitionGroup name="slogan" tag="div" class="room-slogans" aria-hidden="true">
+      <p
+        v-for="slogan in floatingSlogans"
+        :key="slogan.id"
+        class="room-slogan"
+        :style="{
+          left: `${slogan.left}%`,
+          color: slogan.color,
+          animationDelay: `${slogan.delay}s`,
+          '--rot': `${slogan.rot}deg`,
+        }"
+      >
+        {{ slogan.text }}
+      </p>
+    </TransitionGroup>
+
     <div v-if="!ready" class="explorer__loading">Boardin' the galleon...</div>
   </div>
 </template>
@@ -140,6 +156,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import { buildGalleon, animateGalleon } from '@/three/buildGalleon.js'
 import { createStarLayer } from '@/three/createUniverse.js'
 import { createHotspotMarkers, animateHotspots, SHIP_LOCATIONS } from '@/three/shipHotspots.js'
+import { pickRoomSlogans } from '@/three/roomSlogans.js'
 import { createShipInteriors, showInteriorPeek, hideAllInteriors } from '@/three/shipInteriors.js'
 import {
   createDoorFlight,
@@ -195,8 +212,10 @@ const logProgress = ref(0)
 const logComplete = ref(false)
 const deckAudioBlocked = ref(false)
 const shipAudioBlocked = ref(false)
+const floatingSlogans = ref([])
 
 let currentInteriorId = null
+let sloganTimers = []
 
 const isEchoRoom = computed(() =>
   viewMode.value === 'artifact' || viewMode.value === 'artifact-enter'
@@ -337,6 +356,35 @@ function resumeShipAudio() {
   tryStartShipAudio()
 }
 
+function clearEntrySlogans() {
+  sloganTimers.forEach((t) => window.clearTimeout(t))
+  sloganTimers = []
+  floatingSlogans.value = []
+}
+
+function showEntrySlogans(loc) {
+  clearEntrySlogans()
+  const lines = pickRoomSlogans(loc.id, 1 + Math.floor(Math.random() * 2))
+  const color = `#${loc.color.toString(16).padStart(6, '0')}`
+
+  lines.forEach((text, i) => {
+    const id = `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`
+    floatingSlogans.value.push({
+      id,
+      text,
+      left: 10 + Math.random() * 80,
+      rot: (Math.random() - 0.5) * 14,
+      delay: i * 0.45,
+      color,
+    })
+    sloganTimers.push(
+      window.setTimeout(() => {
+        floatingSlogans.value = floatingSlogans.value.filter((s) => s.id !== id)
+      }, 3800 + i * 550)
+    )
+  })
+}
+
 function selectRoom(loc) {
   if (viewMode.value === 'flying' || viewMode.value === 'entering' || viewMode.value === 'interior') return
 
@@ -436,9 +484,12 @@ function startInteriorWalk() {
   if (loc.id === 'mixes' && !isDeckAudioPlaying()) {
     tryStartDeckAudio()
   }
+
+  showEntrySlogans(loc)
 }
 
 function exitInterior() {
+  clearEntrySlogans()
   if (viewMode.value === 'artifact' || viewMode.value === 'artifact-enter') {
     finishExitArtifact()
   }
@@ -822,6 +873,7 @@ function cleanup() {
   canvasRef.value?.removeEventListener('pointerdown', onPointerDown)
   window.removeEventListener('keydown', onKeyDown)
   fpsController?.disable()
+  clearEntrySlogans()
   destroyAllYoutubePlayers()
   composer?.dispose()
   renderer?.dispose()
@@ -1081,6 +1133,58 @@ onUnmounted(cleanup)
   z-index: 16;
   pointer-events: auto;
   font-size: 0.75rem;
+}
+
+.room-slogans {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  overflow: hidden;
+}
+
+.room-slogan {
+  position: absolute;
+  bottom: 38%;
+  margin: 0;
+  transform: translateX(-50%) rotate(var(--rot, -3deg));
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 5vw, 2rem);
+  font-weight: 400;
+  text-transform: lowercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-shadow:
+    0 0 28px currentColor,
+    0 0 8px rgba(255, 255, 255, 0.35),
+    0 3px 12px rgba(0, 0, 0, 0.9);
+  animation: slogan-float 3.4s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes slogan-float {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(24px) rotate(var(--rot, -3deg)) scale(0.82);
+  }
+  14% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-130px) rotate(calc(var(--rot, -3deg) + 5deg)) scale(1.08);
+  }
+}
+
+.slogan-leave-active {
+  transition: opacity 0.35s ease;
+}
+
+.slogan-leave-to {
+  opacity: 0 !important;
 }
 
 .explorer__panel {
