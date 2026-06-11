@@ -13,6 +13,7 @@ const KEY = 'ship'
 export const SHIP_TRACKS = [
   { id: 'YANW7wef-po', label: 'Trip Ship fly-through' },
   { id: 'MwmChAlXwyI', label: 'Cosmic voyage' },
+  { id: '0lzHHVBaJtQ', label: 'Void drift' },
 ]
 
 /** @deprecated use SHIP_TRACKS */
