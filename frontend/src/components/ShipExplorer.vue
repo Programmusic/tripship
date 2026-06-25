@@ -63,7 +63,7 @@
           <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
         </template>
         <template v-else-if="viewMode === 'interior' && !isMobile">
-          <span>Scroll / WASD move</span><span>·</span><span>Drag look</span><span>·</span><span>Shift sprint</span><span>·</span><span>E interact</span>
+          <span>Scroll / WASD / PgUp·Dn move</span><span>·</span><span>Drag look</span><span>·</span><span>Shift sprint</span><span>·</span><span>E interact</span>
         </template>
         <template v-else-if="viewMode === 'interior'">
           <span>WASD move</span><span>·</span><span>Mouse look</span><span>·</span><span>E interact</span>
@@ -765,7 +765,9 @@ function doInteract() {
 function onKeyDown(e) {
   if (viewMode.value === 'interior' && !isMobile.value) {
     const k = e.key.toLowerCase()
-    if (['w', 'a', 's', 'd', 'shift'].includes(k)) e.preventDefault()
+    if (['w', 'a', 's', 'd', 'shift', 'pageup', 'pagedown'].includes(k) || e.key === 'PageUp' || e.key === 'PageDown') {
+      e.preventDefault()
+    }
   }
   if ((viewMode.value === 'interior' || viewMode.value === 'artifact') && (e.key === 'e' || e.key === 'E')) {
     doInteract()

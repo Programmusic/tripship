@@ -12,7 +12,7 @@ export class FPSController {
     this.domElement = domElement
     this.bounds = bounds
     this.desktop = opts.desktop ?? false
-    this.keys = { w: false, a: false, s: false, d: false }
+    this.keys = { w: false, a: false, s: false, d: false, pageup: false, pagedown: false }
     this.shift = false
     this.yaw = Math.PI
     this.pitch = 0
@@ -73,12 +73,16 @@ export class FPSController {
   onKeyDown(e) {
     if (!this.enabled) return
     if (e.key === 'Shift') this.shift = true
+    if (e.key === 'PageUp') this.keys.pageup = true
+    if (e.key === 'PageDown') this.keys.pagedown = true
     const k = e.key.toLowerCase()
     if (k in this.keys) this.keys[k] = true
   }
 
   onKeyUp(e) {
     if (e.key === 'Shift') this.shift = false
+    if (e.key === 'PageUp') this.keys.pageup = false
+    if (e.key === 'PageDown') this.keys.pagedown = false
     const k = e.key.toLowerCase()
     if (k in this.keys) this.keys[k] = false
   }
@@ -180,7 +184,11 @@ export class FPSController {
     if (!this.enabled) return
 
     const targetForward =
-      (this.keys.w ? 1 : 0) - (this.keys.s ? 1 : 0) + this.mobileInput.forward
+      (this.keys.w ? 1 : 0) -
+      (this.keys.s ? 1 : 0) +
+      (this.keys.pageup ? 1 : 0) -
+      (this.keys.pagedown ? 1 : 0) +
+      this.mobileInput.forward
     const targetStrafe =
       (this.keys.d ? 1 : 0) - (this.keys.a ? 1 : 0) + this.mobileInput.strafe
 
