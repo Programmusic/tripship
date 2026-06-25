@@ -1,6 +1,10 @@
 <template>
   <div class="explorer" ref="containerRef">
-    <canvas ref="canvasRef" class="explorer__canvas" />
+    <canvas
+      ref="canvasRef"
+      class="explorer__canvas"
+      :class="{ 'explorer__canvas--walk': viewMode === 'interior' && !isMobile }"
+    />
     <div ref="labelsRef" class="explorer__labels" />
 
     <div
@@ -23,7 +27,12 @@
       <button v-else-if="viewMode === 'artifact' || viewMode === 'artifact-enter'" class="explorer__back btn btn--ghost" @click="exitArtifact">← Leave the Log</button>
       <button v-else class="explorer__back btn btn--ghost" @click="exitInterior">← Back to Deck</button>
       <div class="explorer__hints">
-        <template v-if="viewMode === 'orbit'">
+        <template v-if="viewMode === 'orbit' && !isMobile">
+          <span>Drag to orbit</span><span>·</span><span>Scroll zoom</span><span>·</span><span>Click door to enter</span>
+          <span v-if="shipAudioBlocked">·</span>
+          <button v-if="shipAudioBlocked" class="deck-audio-btn" @click="resumeShipAudio">▶ Start ship audio</button>
+        </template>
+        <template v-else-if="viewMode === 'orbit'">
           <span>Drag to spin</span><span>·</span><span>Scroll to zoom</span><span>·</span><span>Tap a door</span>
           <span v-if="shipAudioBlocked">·</span>
           <button v-if="shipAudioBlocked" class="deck-audio-btn" @click="resumeShipAudio">▶ Start ship audio</button>
@@ -52,6 +61,9 @@
         </template>
         <template v-else-if="viewMode === 'interior' && selected?.id === 'captains-cabin'">
           <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
+        </template>
+        <template v-else-if="viewMode === 'interior' && !isMobile">
+          <span>WASD move</span><span>·</span><span>Drag to look</span><span>·</span><span>Shift sprint</span><span>·</span><span>E interact</span><span>·</span><span>Esc exit</span>
         </template>
         <template v-else-if="viewMode === 'interior'">
           <span>WASD move</span><span>·</span><span>Mouse look</span><span>·</span><span>E interact</span>
@@ -235,6 +247,7 @@ const floatingSlogans = ref([])
 
 let currentInteriorId = null
 let sloganTimers = []
+let orbitPointer = null
 
 const isEchoRoom = computed(() =>
   viewMode.value === 'artifact' || viewMode.value === 'artifact-enter'
@@ -330,13 +343,24 @@ function init() {
 
   controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
-  controls.dampingFactor = 0.06
+  controls.dampingFactor = 0.08
+  controls.rotateSpeed = 0.7
+  controls.zoomSpeed = 1.15
+  controls.panSpeed = 0.75
+  controls.screenSpacePanning = true
   controls.minDistance = 2.2
   controls.maxDistance = 14
   controls.maxPolarAngle = Math.PI / 1.55
   controls.target.set(0, 0.5, 0)
+  controls.mouseButtons = {
+    LEFT: THREE.MOUSE.ROTATE,
+    MIDDLE: THREE.MOUSE.DOLLY,
+    RIGHT: THREE.MOUSE.PAN,
+  }
 
-  fpsController = new FPSController(camera, canvas, { minX: -4, maxX: 4, minZ: -5, maxZ: 5 })
+  fpsController = new FPSController(camera, canvas, { minX: -4, maxX: 4, minZ: -5, maxZ: 5 }, {
+    desktop: !isMobile.value,
+  })
 
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
@@ -351,6 +375,8 @@ function init() {
   raycaster = new THREE.Raycaster()
   pointer = new THREE.Vector2()
   canvas.addEventListener('pointerdown', onPointerDown)
+  canvas.addEventListener('pointerup', onPointerUp)
+  canvas.addEventListener('contextmenu', onContextMenu)
   window.addEventListener('keydown', onKeyDown)
 
   clock = new THREE.Clock()
@@ -520,7 +546,6 @@ function startInteriorWalk() {
     interiorMeta.spawnYaw,
     interiorMeta.spawnPitch ?? 0
   )
-  if (!isMobile.value) fpsController.requestPointerLock()
 
   viewMode.value = 'interior'
   activeFlight = null
@@ -690,7 +715,6 @@ function finishExitArtifact() {
   logComplete.value = false
 
   fpsController.enable(savedInteriorCam.position, savedInteriorCam.yaw, savedInteriorCam.pitch)
-  if (!isMobile.value) fpsController.requestPointerLock()
 
   activeExperience = null
   activeExperienceDef = null
@@ -739,6 +763,10 @@ function doInteract() {
 }
 
 function onKeyDown(e) {
+  if (viewMode.value === 'interior' && !isMobile.value) {
+    const k = e.key.toLowerCase()
+    if (['w', 'a', 's', 'd', 'shift'].includes(k)) e.preventDefault()
+  }
   if ((viewMode.value === 'interior' || viewMode.value === 'artifact') && (e.key === 'e' || e.key === 'E')) {
     doInteract()
   }
@@ -754,18 +782,19 @@ function setMove(forward, strafe) {
   fpsController?.setMobileInput(forward, strafe)
 }
 
-function onPointerDown(event) {
-  if (viewMode.value === 'interior') {
-    if (!isMobile.value) fpsController.requestPointerLock()
-    return
+function onContextMenu(e) {
+  if (viewMode.value === 'interior' && !isMobile.value) {
+    e.preventDefault()
   }
-  if (viewMode.value !== 'orbit') return
+}
 
-  if (shipAudioBlocked.value) resumeShipAudio()
+function trySelectDoorAt(clientX, clientY) {
+  const canvas = canvasRef.value
+  if (!canvas) return
 
-  const rect = canvasRef.value.getBoundingClientRect()
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+  const rect = canvas.getBoundingClientRect()
+  pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1
+  pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1
 
   raycaster.setFromCamera(pointer, camera)
   const hits = raycaster.intersectObjects(hotspots.children, true)
@@ -774,6 +803,28 @@ function onPointerDown(event) {
     while (obj.parent && !obj.userData.location) obj = obj.parent
     if (obj.userData.location) selectRoom(obj.userData.location)
   }
+}
+
+function onPointerDown(event) {
+  if (viewMode.value === 'interior') return
+
+  if (viewMode.value === 'orbit') {
+    orbitPointer = { x: event.clientX, y: event.clientY, id: event.pointerId }
+    if (shipAudioBlocked.value) resumeShipAudio()
+    return
+  }
+}
+
+function onPointerUp(event) {
+  if (viewMode.value !== 'orbit' || !orbitPointer) return
+  if (event.pointerId !== orbitPointer.id) return
+
+  const dx = event.clientX - orbitPointer.x
+  const dy = event.clientY - orbitPointer.y
+  orbitPointer = null
+
+  if (dx * dx + dy * dy > 64) return
+  trySelectDoorAt(event.clientX, event.clientY)
 }
 
 function updateLogReveal(time) {
@@ -926,6 +977,8 @@ function cleanup() {
   cancelAnimationFrame(animId)
   resizeObserver?.disconnect()
   canvasRef.value?.removeEventListener('pointerdown', onPointerDown)
+  canvasRef.value?.removeEventListener('pointerup', onPointerUp)
+  canvasRef.value?.removeEventListener('contextmenu', onContextMenu)
   window.removeEventListener('keydown', onKeyDown)
   fpsController?.disable()
   clearEntrySlogans()
@@ -960,6 +1013,14 @@ onUnmounted(cleanup)
 
 .explorer__canvas:active {
   cursor: grabbing;
+}
+
+.explorer__canvas--walk {
+  cursor: crosshair;
+}
+
+.explorer__canvas--walk:active {
+  cursor: crosshair;
 }
 
 .explorer__labels {
