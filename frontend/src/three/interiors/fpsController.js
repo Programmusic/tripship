@@ -2,6 +2,7 @@ import * as THREE from 'three'
 
 const MOVE_SPEED = 4.8
 const SPRINT_MULT = 1.7
+const SCROLL_MOVE = 0.0042
 const LOOK_SENSITIVITY = 0.0026
 const PITCH_LIMIT = Math.PI / 2 - 0.1
 
@@ -28,6 +29,7 @@ export class FPSController {
     this._onPointerDown = this.onPointerDown.bind(this)
     this._onPointerUp = this.onPointerUp.bind(this)
     this._onPointerCancel = this.onPointerUp.bind(this)
+    this._onWheel = this.onWheel.bind(this)
   }
 
   enable(spawn, yaw = Math.PI, pitch = 0) {
@@ -45,6 +47,7 @@ export class FPSController {
     this.domElement.addEventListener('pointerup', this._onPointerUp)
     this.domElement.addEventListener('pointercancel', this._onPointerCancel)
     this.domElement.addEventListener('pointerleave', this._onPointerUp)
+    this.domElement.addEventListener('wheel', this._onWheel, { passive: false })
   }
 
   disable() {
@@ -59,6 +62,7 @@ export class FPSController {
     this.domElement.removeEventListener('pointerup', this._onPointerUp)
     this.domElement.removeEventListener('pointercancel', this._onPointerCancel)
     this.domElement.removeEventListener('pointerleave', this._onPointerUp)
+    this.domElement.removeEventListener('wheel', this._onWheel)
   }
 
   setMobileInput(forward, strafe) {
@@ -137,6 +141,24 @@ export class FPSController {
     }
   }
 
+  onWheel(e) {
+    if (!this.enabled) return
+    e.preventDefault()
+    const dist = -e.deltaY * SCROLL_MOVE * (this.shift ? SPRINT_MULT : 1)
+    if (Math.abs(dist) < 0.001) return
+    this.movePlanar(dist)
+  }
+
+  movePlanar(distance) {
+    const direction = new THREE.Vector3(0, 0, -1)
+    direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw)
+    direction.y = 0
+    if (direction.lengthSq() < 0.0001) return
+    direction.normalize()
+    this.camera.position.addScaledVector(direction, distance)
+    this.clampPosition()
+  }
+
   applyLookDelta(dx, dy) {
     this.yaw += dx * LOOK_SENSITIVITY
     this.pitch += dy * LOOK_SENSITIVITY
@@ -173,6 +195,7 @@ export class FPSController {
     const speed = MOVE_SPEED * (this.shift ? SPRINT_MULT : 1) * delta
     const direction = new THREE.Vector3(this.velocity.strafe, 0, -this.velocity.forward)
     direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw)
+    if (direction.lengthSq() < 0.0001) return
     direction.normalize()
 
     this.camera.position.addScaledVector(direction, speed)

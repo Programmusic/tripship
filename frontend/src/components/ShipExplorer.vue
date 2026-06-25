@@ -63,7 +63,7 @@
           <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
         </template>
         <template v-else-if="viewMode === 'interior' && !isMobile">
-          <span>WASD move</span><span>·</span><span>Drag to look</span><span>·</span><span>Shift sprint</span><span>·</span><span>E interact</span><span>·</span><span>Esc exit</span>
+          <span>Scroll / WASD move</span><span>·</span><span>Drag look</span><span>·</span><span>Shift sprint</span><span>·</span><span>E interact</span>
         </template>
         <template v-else-if="viewMode === 'interior'">
           <span>WASD move</span><span>·</span><span>Mouse look</span><span>·</span><span>E interact</span>
