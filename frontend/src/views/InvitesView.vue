@@ -8,6 +8,8 @@
       <p class="invite-gate__text">No randos. No algorithms. Crew invite crew. Ye've got <strong>{{ invitesLeft }}</strong> invites left in yer pouch.</p>
     </div>
 
+    <CosmicCommunicator />
+
     <form v-if="auth.isAuthenticated" class="invite-form card" @submit.prevent="sendInvite">
       <h2>Send a Boardin' Pass</h2>
       <div class="form-group">
@@ -45,6 +47,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import api from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
+import CosmicCommunicator from '@/components/CosmicCommunicator.vue'
 
 const auth = useAuthStore()
 const invites = ref([])
