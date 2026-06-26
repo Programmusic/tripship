@@ -532,8 +532,23 @@ function startInteriorWalk() {
   const loc = selected.value
   if (!loc) return
 
-  const interiorData = getOrBuildInterior(loc)
-  if (!interiorData) return
+  let interiorData
+  try {
+    interiorData = getOrBuildInterior(loc)
+  } catch (err) {
+    console.error('Interior build failed:', err)
+    enterFade.value = 0
+    viewMode.value = 'peek'
+    activeFlight = null
+    return
+  }
+
+  if (!interiorData) {
+    enterFade.value = 0
+    viewMode.value = 'peek'
+    activeFlight = null
+    return
+  }
 
   savedOrbitPos = camera.position.clone()
   savedOrbitTarget = controls.target.clone()

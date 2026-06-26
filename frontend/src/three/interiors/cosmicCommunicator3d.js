@@ -238,6 +238,6 @@ export function createCosmicCommunicator3d(invites = []) {
   root.add(ambient)
   root.userData.ambientLight = ambient
 
-  updateCosmicCommunicator3d(root, invites, profiles)
+  updateCosmicCommunicator3d(root, invites, null)
   return root
 }

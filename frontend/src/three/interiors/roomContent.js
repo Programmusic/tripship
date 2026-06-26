@@ -134,9 +134,13 @@ export function populateMemories(room, d) {
 export function populateTheList(room, d) {
   room.add(createQuillBot())
 
-  const communicator = createCosmicCommunicator3d()
-  communicator.position.set(0, 2.35, -d / 2 + 3.1)
-  communicator.scale.setScalar(0.95)
-  room.add(communicator)
-  room.userData.cosmicCommunicator = communicator
+  try {
+    const communicator = createCosmicCommunicator3d()
+    communicator.position.set(0, 2.35, -d / 2 + 3.1)
+    communicator.scale.setScalar(0.95)
+    room.add(communicator)
+    room.userData.cosmicCommunicator = communicator
+  } catch (err) {
+    console.error('Cosmic Communicator failed to build:', err)
+  }
 }
