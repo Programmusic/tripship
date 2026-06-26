@@ -1,99 +1,137 @@
-/** Core crew on the Cosmic Communicator — everyone knows everyone */
+/** Core crew on the Cosmic Communicator — equal nodes on the lattice */
 export const CORE_CREW = [
   {
     id: 'captain_flystyle',
     name: 'Captain Flystyle',
-    role: 'Helm Signal',
-    signal: 'On the lattice same as every mate. No throne — just another node in the moleculous.',
+    role: 'Lattice Mate',
+    signal: 'Same bond, same weight, same voice as every other node on the lattice.',
     color: '#c9a227',
   },
   {
     id: 'b_mellow',
     name: 'b mellow',
-    role: 'Low Frequency Anchor',
+    role: 'Lattice Mate',
     signal: 'Holds the sub-pressure line open. Deep signal, steady bond.',
     color: '#00ffcc',
   },
   {
     id: 'bachon_blue',
     name: 'বচোন blue',
-    role: 'Azure Relay',
+    role: 'Lattice Mate',
     signal: 'Carries the blue-shift transmissions between decks and the void.',
     color: '#4da6ff',
   },
   {
     id: 'phil_officer',
     name: 'Phil Officer',
-    role: 'Watch Officer',
+    role: 'Lattice Mate',
     signal: 'Keeps the watch rotation synced. First to ping when a mate boards.',
     color: '#ff00ff',
   },
   {
     id: 'minton',
     name: 'Minton',
-    role: 'Lattice Node',
+    role: 'Lattice Mate',
     signal: 'Bridges the east-west moleculous arc. Quiet but always connected.',
     color: '#9d4edd',
   },
   {
     id: 'tree',
     name: 'tree',
-    role: 'Root Uplink',
+    role: 'Lattice Mate',
     signal: 'Grounds the network. Old roots, deep memory, always listening.',
     color: '#33ff99',
   },
   {
     id: 'stu_ee',
     name: 'stu-ee',
-    role: 'Echo Pulse',
+    role: 'Lattice Mate',
     signal: 'Repeats the crew heartbeat back through the chain. Never drops a signal.',
     color: '#ffe600',
   },
 ]
 
-/** Evenly space nodes on a ring — no centre hub */
-export function layoutCircle2D(count, cx = 50, cy = 48, radius = 32) {
+const NODE_RADIUS_2D = 9.5
+const NODE_RADIUS_3D = 0.085
+
+/** Stable neutral order — no list-order privilege for any crew member */
+export function sortLatticeCrew(members) {
+  return [...members].sort((a, b) => a.id.localeCompare(b.id))
+}
+
+/** Equal-spacing ring — every node same distance from centre */
+export function layoutCircle2D(count, cx = 50, cy = 50, radius = 31) {
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * Math.PI * 2 - Math.PI / 2
     return {
       x: cx + radius * Math.cos(angle),
       y: cy + radius * Math.sin(angle),
-      r: 10,
+      r: NODE_RADIUS_2D,
     }
   })
 }
 
-/** Fibonacci sphere — molecular cluster, no privileged node */
-export function layoutSphere3D(count, radius = 1.05) {
+/** Flat equal ring in 3D — same height, same radius, same spacing */
+export function layoutRing3D(count, radius = 1.0) {
   if (count <= 1) return [{ x: 0, y: 0, z: 0 }]
-  const golden = Math.PI * (3 - Math.sqrt(5))
   return Array.from({ length: count }, (_, i) => {
-    const y = 1 - (i / (count - 1)) * 2
-    const ring = Math.sqrt(Math.max(0, 1 - y * y))
-    const theta = golden * i
+    const angle = (i / count) * Math.PI * 2 - Math.PI / 2
     return {
-      x: radius * Math.cos(theta) * ring,
-      y: radius * y * 0.82,
-      z: radius * Math.sin(theta) * ring,
+      x: radius * Math.cos(angle),
+      y: 0,
+      z: radius * Math.sin(angle),
     }
   })
 }
 
-/** Complete graph — every soul bound to every other */
-export function buildCompleteBonds(ids) {
+function bondKey(a, b) {
+  return [a, b].sort().join(':')
+}
+
+function isPendingPair(a, b) {
+  return a.startsWith('invite_') || b.startsWith('invite_')
+}
+
+/** Ring edges + full mesh — equal lattice, everyone bound to everyone */
+export function buildLatticeBonds(ids) {
   const bonds = []
+  const seen = new Set()
+
   for (let i = 0; i < ids.length; i++) {
-    for (let j = i + 1; j < ids.length; j++) {
-      const from = ids[i]
-      const to = ids[j]
+    const from = ids[i]
+    const to = ids[(i + 1) % ids.length]
+    const key = bondKey(from, to)
+    if (!seen.has(key)) {
+      seen.add(key)
       bonds.push({
         from,
         to,
         strength: 1,
-        pending: from.startsWith('invite_') || to.startsWith('invite_'),
+        ring: true,
+        pending: isPendingPair(from, to),
       })
     }
   }
+
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 2; j < ids.length; j++) {
+      const from = ids[i]
+      const to = ids[j]
+      const key = bondKey(from, to)
+      if (seen.has(key)) continue
+      seen.add(key)
+      const wrapSkip = i === 0 && j === ids.length - 1
+      if (wrapSkip) continue
+      bonds.push({
+        from,
+        to,
+        strength: 1,
+        ring: false,
+        pending: isPendingPair(from, to),
+      })
+    }
+  }
+
   return bonds
 }
 
@@ -102,36 +140,37 @@ function inviteNode(inv) {
   return {
     id: `invite_${inv.id}`,
     name: inv.name,
-    role: aboard ? 'Aboard' : "Awaitin' passage",
+    role: 'Lattice Mate',
     signal: aboard
-      ? `${inv.name} boarded. Full moleculous bond with the whole crew.`
-      : `${inv.name} is on the manifest — signal strengthening as passage nears.`,
-    color: aboard ? '#00ffcc' : '#6a7a8a',
+      ? `${inv.name} boarded. Equal bond with every node on the lattice.`
+      : `${inv.name} is on the manifest — lattice slot reserved, signal warming up.`,
+    color: aboard ? '#00ffcc' : '#7a8a9a',
     isInvite: true,
     inviteStatus: inv.status,
   }
 }
 
-/** Merge core crew + invitees into one fully-connected moleculous lattice */
+/** Merge core crew + invitees into one equal moleculous lattice */
 export function buildCosmicNetwork(invites = []) {
   const inviteMembers = (invites ?? [])
     .filter((inv) => inv?.name)
     .map(inviteNode)
 
-  const crew = [...CORE_CREW, ...inviteMembers]
+  const crew = sortLatticeCrew([...CORE_CREW, ...inviteMembers])
   const positions2d = layoutCircle2D(crew.length)
-  const positions3d = layoutSphere3D(crew.length)
+  const positions3d = layoutRing3D(crew.length)
 
   const crewWithPos = crew.map((member, i) => ({
     ...member,
     x: positions2d[i].x,
     y: positions2d[i].y,
-    r: member.isInvite && member.inviteStatus !== 'accepted' ? 8 : 10,
+    r: NODE_RADIUS_2D,
     pos3d: positions3d[i],
+    nodeRadius3d: NODE_RADIUS_3D,
   }))
 
   const ids = crewWithPos.map((c) => c.id)
-  const bonds = buildCompleteBonds(ids)
+  const bonds = buildLatticeBonds(ids)
 
   return { crew: crewWithPos, bonds }
 }
@@ -155,4 +194,4 @@ export function getLinkedCrew(crew, bonds, id) {
 /** @deprecated use buildCosmicNetwork */
 export const COSMIC_CREW = CORE_CREW
 /** @deprecated use buildCosmicNetwork */
-export const MOLECULOUS_BONDS = buildCompleteBonds(CORE_CREW.map((c) => c.id))
+export const MOLECULOUS_BONDS = buildLatticeBonds(CORE_CREW.map((c) => c.id))

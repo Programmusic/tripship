@@ -1,11 +1,11 @@
 <template>
   <section class="cosmic-comm card" aria-labelledby="cosmic-comm-title">
     <header class="cosmic-comm__header">
-      <p class="cosmic-comm__eyebrow">☠ Moleculous Network ☠</p>
+      <p class="cosmic-comm__eyebrow">☠ Equal Lattice ☠</p>
       <h2 id="cosmic-comm-title">Cosmic Communicator</h2>
       <p class="cosmic-comm__desc">
-        Every soul on The List speaks through the <strong>moleculous</strong> — the molecular bond
-        that ties the whole crew. No hub, no hierarchy — everyone knows everyone. Tap a node to trace yer bond.
+        An <strong>equal lattice</strong> — every node the same size, same weight, same bond.
+        The moleculous ties the whole crew; no centre, no captain's throne. Tap a node to trace yer place on the web.
       </p>
     </header>
 
@@ -45,6 +45,7 @@
               :class="{
                 'cosmic-comm__bond--active': isBondActive(bond),
                 'cosmic-comm__bond--pending': bond.pending,
+                'cosmic-comm__bond--ring': bond.ring,
               }"
               :style="{ '--bond-strength': bond.strength, '--bond-delay': `${i * 0.35}s` }"
             />
@@ -102,7 +103,7 @@
         <p class="cosmic-comm__panel-role">{{ selected.role }}</p>
         <p class="cosmic-comm__panel-signal">{{ selected.signal }}</p>
         <div class="cosmic-comm__linked">
-          <p class="cosmic-comm__linked-title">Moleculous links</p>
+          <p class="cosmic-comm__linked-title">Lattice mates</p>
           <ul>
             <li v-for="mate in linked" :key="mate.id">
               <button type="button" class="cosmic-comm__link-btn" @click="select(mate.id)">
@@ -240,13 +241,20 @@ function isLinked(id) {
 }
 
 .cosmic-comm__bond {
-  stroke: rgba(0, 255, 204, 0.18);
-  stroke-width: 0.35;
-  stroke-dasharray: 1.2 1.8;
+  stroke: rgba(0, 255, 204, 0.22);
+  stroke-width: 0.28;
+  stroke-dasharray: 1.4 2;
   animation: moleculous-flow 4s linear infinite;
   animation-delay: var(--bond-delay, 0s);
-  opacity: calc(0.35 + var(--bond-strength, 1) * 0.35);
+  opacity: 0.55;
   transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s;
+}
+
+.cosmic-comm__bond--ring {
+  stroke: rgba(0, 255, 204, 0.38);
+  stroke-width: 0.42;
+  stroke-dasharray: none;
+  opacity: 0.75;
 }
 
 .cosmic-comm__bond--pending {

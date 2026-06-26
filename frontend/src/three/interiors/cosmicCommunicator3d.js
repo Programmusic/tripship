@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { buildCosmicNetwork } from '@/demo/cosmicCrew.js'
-import { addMesh, neonMat } from './buildRoom.js'
+import { addMesh } from './buildRoom.js'
 
 const CYAN = 0x00ffcc
 
@@ -43,9 +43,9 @@ function titleSign() {
   ctx.shadowBlur = 16
   ctx.fillText('COSMIC COMMUNICATOR', 256, 36)
   ctx.font = 'italic 18px Georgia, serif'
-  ctx.fillStyle = '#c9a227'
+  ctx.fillStyle = '#00ffcc'
   ctx.shadowBlur = 8
-  ctx.fillText('moleculous lattice', 256, 68)
+  ctx.fillText('equal lattice', 256, 68)
   const tex = new THREE.CanvasTexture(canvas)
   tex.colorSpace = THREE.SRGBColorSpace
   const sign = new THREE.Mesh(
@@ -65,7 +65,7 @@ function createNode(member, index) {
 
   const color = hexToThree(member.color)
   const pending = member.isInvite && member.inviteStatus !== 'accepted'
-  const radius = pending ? 0.07 : 0.09
+  const radius = member.nodeRadius3d ?? 0.085
 
   const core = addMesh(
     group,
@@ -73,7 +73,7 @@ function createNode(member, index) {
     new THREE.MeshStandardMaterial({
       color,
       emissive: color,
-      emissiveIntensity: pending ? 0.9 : 1.6,
+      emissiveIntensity: pending ? 1.2 : 1.5,
       roughness: 0.2,
       metalness: 0.35,
     }),
@@ -82,11 +82,11 @@ function createNode(member, index) {
 
   const ring = addMesh(
     group,
-    new THREE.TorusGeometry(radius * 1.55, 0.008, 8, 24),
+    new THREE.TorusGeometry(radius * 1.5, 0.007, 8, 24),
     new THREE.MeshBasicMaterial({
-      color,
+      color: CYAN,
       transparent: true,
-      opacity: pending ? 0.35 : 0.55,
+      opacity: pending ? 0.4 : 0.5,
       blending: THREE.AdditiveBlending,
     }),
     [0, 0, 0],
@@ -98,7 +98,7 @@ function createNode(member, index) {
   label.position.set(0, -0.22, 0)
   group.add(label)
 
-  const light = new THREE.PointLight(color, pending ? 1.2 : 2.4, 2.2)
+  const light = new THREE.PointLight(color, 2, 2)
   light.position.set(0, 0, 0)
   group.add(light)
   group.userData.nodeLight = light
@@ -108,19 +108,20 @@ function createNode(member, index) {
   return group
 }
 
-function createBond(from, to, pending) {
+function createBond(from, to, { pending, ring }) {
   const geom = new THREE.BufferGeometry().setFromPoints([from, to])
   const mat = new THREE.LineBasicMaterial({
-    color: pending ? 0x556677 : CYAN,
+    color: CYAN,
     transparent: true,
-    opacity: pending ? 0.22 : 0.38,
+    opacity: pending ? 0.2 : ring ? 0.45 : 0.28,
     blending: THREE.AdditiveBlending,
   })
   const line = new THREE.Line(geom, mat)
   line.userData.animType = 'moleculousBond'
   line.userData.phase = from.x + to.z
-  line.userData.bondStrength = pending ? 0.5 : 1
+  line.userData.bondStrength = 1
   line.userData.pending = pending
+  line.userData.ring = ring
   return line
 }
 
@@ -167,7 +168,7 @@ export function updateCosmicCommunicator3d(root, invites = []) {
     const a = nodeMap.get(bond.from)
     const b = nodeMap.get(bond.to)
     if (!a || !b) return
-    lattice.add(createBond(a, b, bond.pending))
+    lattice.add(createBond(a, b, { pending: bond.pending, ring: bond.ring }))
   })
 }
 
@@ -178,31 +179,17 @@ export function createCosmicCommunicator3d(invites = []) {
 
   const halo = addMesh(
     root,
-    new THREE.TorusGeometry(1.35, 0.012, 8, 64),
+    new THREE.TorusGeometry(1.2, 0.01, 8, 64),
     new THREE.MeshBasicMaterial({
       color: CYAN,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.22,
       blending: THREE.AdditiveBlending,
     }),
     [0, 0, 0],
     [Math.PI / 2, 0, 0]
   )
   halo.userData.animType = 'cosmicHalo'
-
-  const innerHalo = addMesh(
-    root,
-    new THREE.TorusGeometry(0.95, 0.008, 8, 48),
-    new THREE.MeshBasicMaterial({
-      color: 0xc9a227,
-      transparent: true,
-      opacity: 0.18,
-      blending: THREE.AdditiveBlending,
-    }),
-    [0, 0, 0],
-    [Math.PI / 2, 0, 0.4]
-  )
-  innerHalo.userData.animType = 'cosmicHaloInner'
 
   root.add(titleSign())
 
