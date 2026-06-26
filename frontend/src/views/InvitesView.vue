@@ -8,7 +8,7 @@
       <p class="invite-gate__text">No randos. No algorithms. Crew invite crew. Ye've got <strong>{{ invitesLeft }}</strong> invites left in yer pouch.</p>
     </div>
 
-    <CosmicCommunicator />
+    <CosmicCommunicator :invites="invites" />
 
     <form v-if="auth.isAuthenticated" class="invite-form card" @submit.prevent="sendInvite">
       <h2>Send a Boardin' Pass</h2>

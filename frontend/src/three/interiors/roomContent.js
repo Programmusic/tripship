@@ -3,6 +3,7 @@ import { addMesh, woodMat, neonMat } from './buildRoom.js'
 import { createKrakenbyteStage } from './deckStage.js'
 import { createBassStack } from './characters.js'
 import { createGhostCaptain, createQuillBot } from './characters.js'
+import { createCosmicCommunicator3d } from './cosmicCommunicator3d.js'
 import { createCaptainsLogArtifact, createCaptainsLogDeskSign } from './artifactExperiences/index.js'
 
 const PINK = 0xff00ff
@@ -132,4 +133,10 @@ export function populateMemories(room, d) {
 
 export function populateTheList(room, d) {
   room.add(createQuillBot())
+
+  const communicator = createCosmicCommunicator3d()
+  communicator.position.set(0, 2.35, -d / 2 + 3.1)
+  communicator.scale.setScalar(0.95)
+  room.add(communicator)
+  room.userData.cosmicCommunicator = communicator
 }

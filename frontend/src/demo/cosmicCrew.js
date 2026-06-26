@@ -1,14 +1,11 @@
-/** Crew nodes on the Cosmic Communicator — linked via moleculous bonds */
-export const COSMIC_CREW = [
+/** Core crew on the Cosmic Communicator — everyone knows everyone */
+export const CORE_CREW = [
   {
     id: 'captain_flystyle',
     name: 'Captain Flystyle',
     role: 'Helm Signal',
-    signal: 'All channels route through the helm. Captain broadcasts orders across the moleculous lattice.',
+    signal: 'On the lattice same as every mate. No throne — just another node in the moleculous.',
     color: '#c9a227',
-    x: 50,
-    y: 50,
-    r: 15,
   },
   {
     id: 'b_mellow',
@@ -16,9 +13,6 @@ export const COSMIC_CREW = [
     role: 'Low Frequency Anchor',
     signal: 'Holds the sub-pressure line open. Deep signal, steady bond.',
     color: '#00ffcc',
-    x: 22,
-    y: 20,
-    r: 11,
   },
   {
     id: 'bachon_blue',
@@ -26,9 +20,6 @@ export const COSMIC_CREW = [
     role: 'Azure Relay',
     signal: 'Carries the blue-shift transmissions between decks and the void.',
     color: '#4da6ff',
-    x: 78,
-    y: 22,
-    r: 11,
   },
   {
     id: 'phil_officer',
@@ -36,9 +27,6 @@ export const COSMIC_CREW = [
     role: 'Watch Officer',
     signal: 'Keeps the watch rotation synced. First to ping when a mate boards.',
     color: '#ff00ff',
-    x: 14,
-    y: 52,
-    r: 11,
   },
   {
     id: 'minton',
@@ -46,9 +34,6 @@ export const COSMIC_CREW = [
     role: 'Lattice Node',
     signal: 'Bridges the east-west moleculous arc. Quiet but always connected.',
     color: '#9d4edd',
-    x: 86,
-    y: 50,
-    r: 11,
   },
   {
     id: 'tree',
@@ -56,9 +41,6 @@ export const COSMIC_CREW = [
     role: 'Root Uplink',
     signal: 'Grounds the network. Old roots, deep memory, always listening.',
     color: '#33ff99',
-    x: 26,
-    y: 82,
-    r: 11,
   },
   {
     id: 'stu_ee',
@@ -66,41 +48,111 @@ export const COSMIC_CREW = [
     role: 'Echo Pulse',
     signal: 'Repeats the crew heartbeat back through the chain. Never drops a signal.',
     color: '#ffe600',
-    x: 74,
-    y: 80,
-    r: 11,
   },
 ]
 
-/** Moleculous bonds — molecular connections between crew */
-export const MOLECULOUS_BONDS = [
-  { from: 'captain_flystyle', to: 'b_mellow', strength: 1 },
-  { from: 'captain_flystyle', to: 'bachon_blue', strength: 1 },
-  { from: 'captain_flystyle', to: 'phil_officer', strength: 1 },
-  { from: 'captain_flystyle', to: 'minton', strength: 1 },
-  { from: 'captain_flystyle', to: 'tree', strength: 1 },
-  { from: 'captain_flystyle', to: 'stu_ee', strength: 1 },
-  { from: 'b_mellow', to: 'tree', strength: 0.85 },
-  { from: 'b_mellow', to: 'stu_ee', strength: 0.7 },
-  { from: 'bachon_blue', to: 'stu_ee', strength: 0.85 },
-  { from: 'bachon_blue', to: 'minton', strength: 0.75 },
-  { from: 'phil_officer', to: 'minton', strength: 0.8 },
-  { from: 'phil_officer', to: 'tree', strength: 0.65 },
-  { from: 'tree', to: 'stu_ee', strength: 0.7 },
-]
-
-export function getCrewById(id) {
-  return COSMIC_CREW.find((c) => c.id === id) ?? null
+/** Evenly space nodes on a ring — no centre hub */
+export function layoutCircle2D(count, cx = 50, cy = 48, radius = 32) {
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (i / count) * Math.PI * 2 - Math.PI / 2
+    return {
+      x: cx + radius * Math.cos(angle),
+      y: cy + radius * Math.sin(angle),
+      r: 10,
+    }
+  })
 }
 
-export function getBondsForCrew(id) {
-  return MOLECULOUS_BONDS.filter((b) => b.from === id || b.to === id)
+/** Fibonacci sphere — molecular cluster, no privileged node */
+export function layoutSphere3D(count, radius = 1.05) {
+  if (count <= 1) return [{ x: 0, y: 0, z: 0 }]
+  const golden = Math.PI * (3 - Math.sqrt(5))
+  return Array.from({ length: count }, (_, i) => {
+    const y = 1 - (i / (count - 1)) * 2
+    const ring = Math.sqrt(Math.max(0, 1 - y * y))
+    const theta = golden * i
+    return {
+      x: radius * Math.cos(theta) * ring,
+      y: radius * y * 0.82,
+      z: radius * Math.sin(theta) * ring,
+    }
+  })
 }
 
-export function getLinkedCrew(id) {
+/** Complete graph — every soul bound to every other */
+export function buildCompleteBonds(ids) {
+  const bonds = []
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const from = ids[i]
+      const to = ids[j]
+      bonds.push({
+        from,
+        to,
+        strength: 1,
+        pending: from.startsWith('invite_') || to.startsWith('invite_'),
+      })
+    }
+  }
+  return bonds
+}
+
+function inviteNode(inv) {
+  const aboard = inv.status === 'accepted'
+  return {
+    id: `invite_${inv.id}`,
+    name: inv.name,
+    role: aboard ? 'Aboard' : "Awaitin' passage",
+    signal: aboard
+      ? `${inv.name} boarded. Full moleculous bond with the whole crew.`
+      : `${inv.name} is on the manifest — signal strengthening as passage nears.`,
+    color: aboard ? '#00ffcc' : '#6a7a8a',
+    isInvite: true,
+    inviteStatus: inv.status,
+  }
+}
+
+/** Merge core crew + invitees into one fully-connected moleculous lattice */
+export function buildCosmicNetwork(invites = []) {
+  const inviteMembers = (invites ?? [])
+    .filter((inv) => inv?.name)
+    .map(inviteNode)
+
+  const crew = [...CORE_CREW, ...inviteMembers]
+  const positions2d = layoutCircle2D(crew.length)
+  const positions3d = layoutSphere3D(crew.length)
+
+  const crewWithPos = crew.map((member, i) => ({
+    ...member,
+    x: positions2d[i].x,
+    y: positions2d[i].y,
+    r: member.isInvite && member.inviteStatus !== 'accepted' ? 8 : 10,
+    pos3d: positions3d[i],
+  }))
+
+  const ids = crewWithPos.map((c) => c.id)
+  const bonds = buildCompleteBonds(ids)
+
+  return { crew: crewWithPos, bonds }
+}
+
+export function getCrewById(crew, id) {
+  return crew.find((c) => c.id === id) ?? null
+}
+
+export function getBondsForCrew(bonds, id) {
+  return bonds.filter((b) => b.from === id || b.to === id)
+}
+
+export function getLinkedCrew(crew, bonds, id) {
   const ids = new Set()
-  getBondsForCrew(id).forEach((b) => {
+  getBondsForCrew(bonds, id).forEach((b) => {
     ids.add(b.from === id ? b.to : b.from)
   })
-  return COSMIC_CREW.filter((c) => ids.has(c.id))
+  return crew.filter((c) => ids.has(c.id))
 }
+
+/** @deprecated use buildCosmicNetwork */
+export const COSMIC_CREW = CORE_CREW
+/** @deprecated use buildCosmicNetwork */
+export const MOLECULOUS_BONDS = buildCompleteBonds(CORE_CREW.map((c) => c.id))

@@ -197,6 +197,8 @@ import {
   createInteriorLighting,
 } from '@/three/interiors/interiorManager.js'
 import { animateInterior, findInteractable, isNearExit } from '@/three/interiors/interiorScenes.js'
+import { updateCosmicCommunicator3d } from '@/three/interiors/cosmicCommunicator3d.js'
+import api from '@/api/client'
 import {
   startDeckAudio,
   stopDeckAudio,
@@ -562,6 +564,21 @@ function startInteriorWalk() {
   }
 
   showEntrySlogans(loc)
+
+  if (loc.id === 'the-list') {
+    refreshListRoomCosmicNetwork()
+  }
+}
+
+async function refreshListRoomCosmicNetwork() {
+  try {
+    const { data } = await api.get('/invites')
+    const comm = interiorGroup?.getObjectByName('cosmic-communicator')
+      ?? interiorGroup?.userData?.cosmicCommunicator
+    if (comm) updateCosmicCommunicator3d(comm, data)
+  } catch {
+    /* core crew lattice still visible */
+  }
 }
 
 function exitInterior() {

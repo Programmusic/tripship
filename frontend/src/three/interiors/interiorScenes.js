@@ -254,6 +254,35 @@ export function animateInterior(group, time) {
     if (obj.userData.animType === 'quillArm') {
       obj.rotation.x = 0.5 + Math.sin(time * 3) * 0.4
     }
+    if (obj.userData.animType === 'cosmicComm') {
+      obj.rotation.y = time * 0.1
+      if (obj.userData.ambientLight) {
+        obj.userData.ambientLight.intensity = 3.5 + Math.sin(time * 1.8) * 1.2
+      }
+    }
+    if (obj.userData.animType === 'cosmicHalo') {
+      obj.rotation.z = time * 0.35
+      obj.material.opacity = 0.18 + Math.sin(time * 2) * 0.08
+    }
+    if (obj.userData.animType === 'cosmicHaloInner') {
+      obj.rotation.z = -time * 0.28
+      obj.material.opacity = 0.12 + Math.sin(time * 2.5 + 1) * 0.06
+    }
+    if (obj.userData.animType === 'moleculousBond') {
+      const base = obj.userData.pending ? 0.14 : 0.28
+      obj.material.opacity = base + Math.sin(time * 2.2 + obj.userData.phase) * 0.12
+    }
+    if (obj.userData.animType === 'cosmicNode') {
+      const pulse = 1 + Math.sin(time * 2.5 + obj.userData.phase) * 0.07
+      if (obj.userData.core) obj.userData.core.scale.setScalar(pulse)
+      if (obj.userData.nodeLight) {
+        const dim = obj.userData.pending ? 0.8 : 1.6
+        obj.userData.nodeLight.intensity = dim + Math.sin(time * 3 + obj.userData.phase) * 0.5
+      }
+    }
+    if (obj.userData.animType === 'cosmicNodeRing') {
+      obj.rotation.z = time * 1.4
+    }
     if (obj.userData.animType === 'holoGlobe') {
       obj.rotation.y = time * 0.5
     }

@@ -5,7 +5,7 @@
       <h2 id="cosmic-comm-title">Cosmic Communicator</h2>
       <p class="cosmic-comm__desc">
         Every soul on The List speaks through the <strong>moleculous</strong> — the molecular bond
-        that ties the crew across the void. Tap a node to trace yer connection.
+        that ties the whole crew. No hub, no hierarchy — everyone knows everyone. Tap a node to trace yer bond.
       </p>
     </header>
 
@@ -44,7 +44,7 @@
               class="cosmic-comm__bond"
               :class="{
                 'cosmic-comm__bond--active': isBondActive(bond),
-                'cosmic-comm__bond--hub': bond.from === 'captain_flystyle' || bond.to === 'captain_flystyle',
+                'cosmic-comm__bond--pending': bond.pending,
               }"
               :style="{ '--bond-strength': bond.strength, '--bond-delay': `${i * 0.35}s` }"
             />
@@ -58,6 +58,7 @@
               :class="{
                 'cosmic-comm__node--selected': selectedId === member.id,
                 'cosmic-comm__node--linked': isLinked(member.id),
+                'cosmic-comm__node--pending': member.isInvite && member.inviteStatus !== 'accepted',
               }"
               @click="select(member.id)"
               @keydown.enter.prevent="select(member.id)"
@@ -133,17 +134,22 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { COSMIC_CREW, MOLECULOUS_BONDS, getCrewById, getLinkedCrew } from '@/demo/cosmicCrew.js'
+import { buildCosmicNetwork, getCrewById, getLinkedCrew } from '@/demo/cosmicCrew.js'
 
-const crew = COSMIC_CREW
-const bonds = MOLECULOUS_BONDS
-const selectedId = ref('captain_flystyle')
+const props = defineProps({
+  invites: { type: Array, default: () => [] },
+})
 
-const selected = computed(() => getCrewById(selectedId.value))
-const linked = computed(() => getLinkedCrew(selectedId.value))
+const network = computed(() => buildCosmicNetwork(props.invites))
+const crew = computed(() => network.value.crew)
+const bonds = computed(() => network.value.bonds)
+const selectedId = ref('b_mellow')
+
+const selected = computed(() => getCrewById(crew.value, selectedId.value))
+const linked = computed(() => getLinkedCrew(crew.value, bonds.value, selectedId.value))
 
 function nodePos(id) {
-  const n = getCrewById(id)
+  const n = getCrewById(crew.value, id)
   return n ? { x: n.x, y: n.y } : { x: 50, y: 50 }
 }
 
@@ -243,8 +249,9 @@ function isLinked(id) {
   transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s;
 }
 
-.cosmic-comm__bond--hub {
-  stroke: rgba(201, 162, 39, 0.28);
+.cosmic-comm__bond--pending {
+  stroke: rgba(106, 122, 138, 0.35);
+  stroke-dasharray: 0.8 2.2;
 }
 
 .cosmic-comm__bond--active {
@@ -292,6 +299,15 @@ function isLinked(id) {
 
 .cosmic-comm__node--linked .cosmic-comm__node-ring {
   opacity: 0.9;
+}
+
+.cosmic-comm__node--pending .cosmic-comm__node-ring {
+  stroke-dasharray: 2 2;
+  opacity: 0.45;
+}
+
+.cosmic-comm__node--pending .cosmic-comm__node-core {
+  opacity: 0.65;
 }
 
 .cosmic-comm__node:focus-visible .cosmic-comm__node-ring {
