@@ -14,7 +14,7 @@
       <h2>Send a Boardin' Pass</h2>
       <div class="form-group">
         <label for="name">Matey's Name</label>
-        <input id="name" v-model="form.name" type="text" required placeholder="e.g. Rude Boy Steve" />
+        <input id="name" v-model="form.name" type="text" required placeholder="Matey's name" />
       </div>
       <div class="form-group">
         <label for="email">Scroll Address (Email)</label>

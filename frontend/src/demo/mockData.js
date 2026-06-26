@@ -8,35 +8,7 @@ export const demoUser = {
   createdAt: '1994-08-12T00:00:00.000Z',
 }
 
-export const mockMemories = [
-  {
-    id: 1,
-    authorName: 'Maya Bass',
-    title: 'Bristol Warehouse — New Year \'96',
-    content: 'Four K bins stacked to the crow\'s nest. The whole deck was bouncing. When the amen dropped at 4 bells, the hull felt like she were breathing. Pure Trip Ship plunder, arr!',
-    eventYear: '1996',
-    location: 'Easton, Bristol',
-    createdAt: '2024-11-02T22:30:00.000Z',
-  },
-  {
-    id: 2,
-    authorName: 'Rude Boy Steve',
-    title: 'Sound Clash at Carnival',
-    content: 'Trip Ship rolled up with the full stack. Other crews tried it but our bass weight sank \'em all. Crowd went mad when we switched to jungle pressure. Still got the dubplate with me name on it, treasure that.',
-    eventYear: '1995',
-    location: 'Notting Hill',
-    createdAt: '2024-10-18T14:00:00.000Z',
-  },
-  {
-    id: 3,
-    authorName: 'Jungle Jane',
-    title: 'First Time Boardin\' the Ship',
-    content: 'I were 16. Mate dragged me to a free party in some disused factory. Didn\'t understand what I were hearin\' until the subs hit — proper chest compression. Been sailin\' with Trip Ship ever since.',
-    eventYear: '1993',
-    location: 'Hackney Wick',
-    createdAt: '2024-09-05T19:45:00.000Z',
-  },
-]
+export const mockMemories = []
 
 export const mockMixes = [
   {
@@ -199,8 +171,4 @@ This be our museum. No curators. Just crew.
   },
 ]
 
-export const mockInvites = [
-  { id: 1, email: 'maya@tripship.com', name: 'Maya Bass', status: 'accepted', sentAt: '2024-10-01T00:00:00.000Z' },
-  { id: 2, email: 'steve@tripship.com', name: 'Rude Boy Steve', status: 'accepted', sentAt: '2024-10-05T00:00:00.000Z' },
-  { id: 3, email: 'jane@tripship.com', name: 'Jungle Jane', status: 'pending', sentAt: '2024-12-01T00:00:00.000Z' },
-]
+export const mockInvites = []
