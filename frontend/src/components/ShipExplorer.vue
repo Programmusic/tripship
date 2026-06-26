@@ -62,6 +62,9 @@
         <template v-else-if="viewMode === 'interior' && selected?.id === 'captains-cabin'">
           <span>Walk to the back wall — golden log under the sign</span><span>·</span><span>E to read</span>
         </template>
+        <template v-else-if="viewMode === 'interior' && selected?.id === 'the-list'">
+          <span>Look at a lattice node</span><span>·</span><span>E to open profile</span>
+        </template>
         <template v-else-if="viewMode === 'interior' && !isMobile">
           <span>Scroll / WASD / PgUp·Dn move</span><span>·</span><span>Drag look</span><span>·</span><span>Shift sprint</span><span>·</span><span>E interact</span>
         </template>
@@ -70,6 +73,18 @@
         </template>
       </div>
     </div>
+
+    <Transition name="panel">
+      <div v-if="cosmicProfile" class="explorer__panel card explorer__cosmic-profile">
+        <button class="panel-close" @click="closeCosmicProfile" aria-label="Close">✕</button>
+        <p class="panel-eyebrow">☠ Lattice profile ☠</p>
+        <h2>{{ cosmicProfile.name }}</h2>
+        <p class="explorer__cosmic-role">{{ cosmicProfile.role }}</p>
+        <p>{{ cosmicProfile.signal }}</p>
+        <p v-if="cosmicProfile.bio" class="explorer__cosmic-bio">{{ cosmicProfile.bio }}</p>
+        <RouterLink to="/the-list" class="btn btn--pink" @click="closeCosmicProfile">Open on The List</RouterLink>
+      </div>
+    </Transition>
 
     <Transition name="panel">
       <div v-if="selected && viewMode === 'peek'" class="explorer__panel card">
@@ -197,7 +212,9 @@ import {
   createInteriorLighting,
 } from '@/three/interiors/interiorManager.js'
 import { animateInterior, findInteractable, isNearExit } from '@/three/interiors/interiorScenes.js'
-import { updateCosmicCommunicator3d } from '@/three/interiors/cosmicCommunicator3d.js'
+import { updateCosmicCommunicator3d, findCosmicNode } from '@/three/interiors/cosmicCommunicator3d.js'
+import { fetchLatticeProfiles } from '@/stores/latticeProfile.js'
+import { buildCosmicNetwork, getCrewById } from '@/demo/cosmicCrew.js'
 import api from '@/api/client'
 import {
   startDeckAudio,
@@ -238,6 +255,8 @@ const selected = ref(null)
 const viewMode = ref('orbit')
 const enterFade = ref(0)
 const interactPrompt = ref('')
+const cosmicProfile = ref(null)
+const latticeNetworkCrew = ref([])
 const isMobile = ref(false)
 const logRevealText = ref('')
 const logProgress = ref(0)
@@ -572,17 +591,32 @@ function startInteriorWalk() {
 
 async function refreshListRoomCosmicNetwork() {
   try {
-    const { data } = await api.get('/invites')
+    const [invitesRes, profiles] = await Promise.all([
+      api.get('/invites'),
+      fetchLatticeProfiles(),
+    ])
+    const network = buildCosmicNetwork({ invites: invitesRes.data, profiles })
+    latticeNetworkCrew.value = network.crew
     const comm = interiorGroup?.getObjectByName('cosmic-communicator')
       ?? interiorGroup?.userData?.cosmicCommunicator
-    if (comm) updateCosmicCommunicator3d(comm, data)
+    if (comm) updateCosmicCommunicator3d(comm, invitesRes.data, profiles)
   } catch {
     /* core crew lattice still visible */
   }
 }
 
+function openCosmicProfile(crewId) {
+  const member = getCrewById(latticeNetworkCrew.value, crewId)
+  if (member) cosmicProfile.value = member
+}
+
+function closeCosmicProfile() {
+  cosmicProfile.value = null
+}
+
 function exitInterior() {
   clearEntrySlogans()
+  closeCosmicProfile()
   if (viewMode.value === 'artifact' || viewMode.value === 'artifact-enter') {
     finishExitArtifact()
   }
@@ -772,6 +806,14 @@ function doInteract() {
     return
   }
 
+  if (currentInteriorId === 'the-list') {
+    const node = findCosmicNode(interiorGroup, camera)
+    if (node?.userData.crewId) {
+      openCosmicProfile(node.userData.crewId)
+      return
+    }
+  }
+
   const target = findInteractable(interiorGroup, camera)
   if (target?.userData.isTerminal) {
     const route = selected.value?.route
@@ -876,6 +918,14 @@ function updateInteractPrompt() {
   if (artifact?.userData.artifactLabel) {
     interactPrompt.value = artifact.userData.artifactLabel
     return
+  }
+
+  if (currentInteriorId === 'the-list') {
+    const node = findCosmicNode(interiorGroup, camera)
+    if (node?.userData.crewId) {
+      interactPrompt.value = 'View lattice profile (E)'
+      return
+    }
   }
 
   const target = findInteractable(interiorGroup, camera)
@@ -1353,6 +1403,17 @@ onUnmounted(cleanup)
   font-size: 0.9rem;
   margin-bottom: 1.25rem;
   line-height: 1.6;
+}
+
+.explorer__cosmic-role {
+  font-size: 0.72rem;
+  color: var(--neon-pink);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.explorer__cosmic-bio {
+  font-style: italic;
 }
 
 .panel-close {

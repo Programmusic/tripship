@@ -51,6 +51,20 @@ function initSqlite() {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS lattice_profiles (
+      lattice_id TEXT PRIMARY KEY,
+      user_id INTEGER,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Lattice Mate',
+      signal TEXT NOT NULL DEFAULT '',
+      bio TEXT NOT NULL DEFAULT '',
+      color TEXT NOT NULL DEFAULT '#00ffcc',
+      avatar_url TEXT,
+      is_core_crew INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `)
 
   return {
@@ -102,6 +116,19 @@ async function initPostgres() {
       audio_url TEXT,
       audio_path TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS lattice_profiles (
+      lattice_id VARCHAR(80) PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      name VARCHAR(120) NOT NULL,
+      role VARCHAR(80) NOT NULL DEFAULT 'Lattice Mate',
+      signal TEXT NOT NULL DEFAULT '',
+      bio TEXT NOT NULL DEFAULT '',
+      color VARCHAR(16) NOT NULL DEFAULT '#00ffcc',
+      avatar_url TEXT,
+      is_core_crew BOOLEAN NOT NULL DEFAULT FALSE,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `)
 

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { getDb } from '../db/index.js'
 import { signToken } from '../middleware/auth.js'
+import { ensureProfileForUser } from '../services/latticeProfiles.js'
 
 const router = Router()
 
@@ -51,6 +52,7 @@ router.post('/register', async (req, res) => {
     }
 
     const token = signToken(user)
+    await ensureProfileForUser(formatUser(user))
     res.status(201).json({ token, user: formatUser(user) })
   } catch (err) {
     if (err.message?.includes('UNIQUE') || err.code === '23505') {

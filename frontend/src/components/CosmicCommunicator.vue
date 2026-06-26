@@ -5,7 +5,7 @@
       <h2 id="cosmic-comm-title">Cosmic Communicator</h2>
       <p class="cosmic-comm__desc">
         An <strong>equal lattice</strong> — every node the same size, same weight, same bond.
-        The moleculous ties the whole crew; no centre, no captain's throne. Tap a node to trace yer place on the web.
+        The moleculous ties the whole crew; no centre, no captain's throne. <strong>Click a node</strong> to open their lattice profile.
       </p>
     </header>
 
@@ -72,6 +72,12 @@
               <circle
                 :cx="member.x"
                 :cy="member.y"
+                :r="member.r + 2.5"
+                class="cosmic-comm__node-hit"
+              />
+              <circle
+                :cx="member.x"
+                :cy="member.y"
                 :r="member.r"
                 class="cosmic-comm__node-ring"
                 :style="{ '--node-color': member.color }"
@@ -97,23 +103,13 @@
         </svg>
       </div>
 
-      <aside v-if="selected" class="cosmic-comm__panel">
-        <p class="cosmic-comm__panel-eyebrow">Signal locked</p>
-        <h3 class="cosmic-comm__panel-name">{{ selected.name }}</h3>
-        <p class="cosmic-comm__panel-role">{{ selected.role }}</p>
-        <p class="cosmic-comm__panel-signal">{{ selected.signal }}</p>
-        <div class="cosmic-comm__linked">
-          <p class="cosmic-comm__linked-title">Lattice mates</p>
-          <ul>
-            <li v-for="mate in linked" :key="mate.id">
-              <button type="button" class="cosmic-comm__link-btn" @click="select(mate.id)">
-                <span class="cosmic-comm__link-dot" :style="{ background: mate.color }" />
-                {{ mate.name }}
-              </button>
-            </li>
-          </ul>
-        </div>
-      </aside>
+      <LatticeProfilePanel
+        v-if="selected"
+        :member="selected"
+        :linked="linked"
+        @select="select"
+        @updated="onProfileUpdated"
+      />
     </div>
 
     <div class="cosmic-comm__chips" role="list" aria-label="Crew on the moleculous network">
@@ -134,20 +130,46 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { buildCosmicNetwork, getCrewById, getLinkedCrew } from '@/demo/cosmicCrew.js'
+import { fetchLatticeProfiles } from '@/stores/latticeProfile.js'
+import LatticeProfilePanel from '@/components/LatticeProfilePanel.vue'
 
 const props = defineProps({
   invites: { type: Array, default: () => [] },
 })
 
-const network = computed(() => buildCosmicNetwork(props.invites))
+const profiles = ref([])
+
+const network = computed(() => buildCosmicNetwork({ invites: props.invites, profiles: profiles.value }))
 const crew = computed(() => network.value.crew)
 const bonds = computed(() => network.value.bonds)
-const selectedId = ref('b_mellow')
+const selectedId = ref(null)
 
 const selected = computed(() => getCrewById(crew.value, selectedId.value))
-const linked = computed(() => getLinkedCrew(crew.value, bonds.value, selectedId.value))
+const linked = computed(() =>
+  selectedId.value ? getLinkedCrew(crew.value, bonds.value, selectedId.value) : []
+)
+
+onMounted(async () => {
+  try {
+    profiles.value = await fetchLatticeProfiles()
+    if (!selectedId.value && crew.value.length) {
+      selectedId.value = crew.value[0].id
+    }
+  } catch {
+    profiles.value = []
+  }
+})
+
+function onProfileUpdated(updated) {
+  const idx = profiles.value.findIndex((p) => p.latticeId === updated.latticeId)
+  if (idx >= 0) {
+    profiles.value[idx] = updated
+  } else {
+    profiles.value.push(updated)
+  }
+}
 
 function nodePos(id) {
   const n = getCrewById(crew.value, id)
@@ -230,7 +252,7 @@ function isLinked(id) {
   border: 1px solid rgba(201, 162, 39, 0.15);
   border-radius: 4px;
   padding: 0.5rem;
-  min-height: 280px;
+  min-height: 340px;
 }
 
 .cosmic-comm__svg {
@@ -281,26 +303,33 @@ function isLinked(id) {
 .cosmic-comm__node-ring {
   fill: none;
   stroke: var(--node-color);
-  stroke-width: 0.5;
-  opacity: 0.55;
+  stroke-width: 0.65;
+  opacity: 0.6;
   transition: opacity 0.2s, stroke-width 0.2s;
+}
+
+.cosmic-comm__node-hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
 }
 
 .cosmic-comm__node-core {
   opacity: 0.92;
   transition: transform 0.2s;
+  pointer-events: none;
 }
 
 .cosmic-comm__node-label {
   font-family: var(--font-mono);
-  font-size: 2.8px;
+  font-size: 3.2px;
   fill: var(--text-primary);
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .cosmic-comm__node--selected .cosmic-comm__node-ring {
-  stroke-width: 0.9;
+  stroke-width: 1.05;
   opacity: 1;
   animation: node-pulse 2s ease-in-out infinite;
 }
@@ -326,83 +355,6 @@ function isLinked(id) {
 @keyframes node-pulse {
   0%, 100% { opacity: 0.75; }
   50% { opacity: 1; }
-}
-
-.cosmic-comm__panel {
-  padding: 1rem 1.1rem;
-  background: rgba(10, 14, 24, 0.85);
-  border: 1px solid rgba(0, 255, 204, 0.2);
-  border-radius: 4px;
-}
-
-.cosmic-comm__panel-eyebrow {
-  font-size: 0.6rem;
-  color: var(--neon-cyan);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 0.35rem;
-}
-
-.cosmic-comm__panel-name {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  color: var(--gold);
-  margin-bottom: 0.2rem;
-}
-
-.cosmic-comm__panel-role {
-  font-size: 0.72rem;
-  color: var(--neon-pink);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.75rem;
-}
-
-.cosmic-comm__panel-signal {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  line-height: 1.55;
-  margin-bottom: 1rem;
-}
-
-.cosmic-comm__linked-title {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.cosmic-comm__linked ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.cosmic-comm__link-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  cursor: pointer;
-  padding: 0.25rem 0;
-  text-align: left;
-}
-
-.cosmic-comm__link-btn:hover {
-  color: var(--neon-cyan);
-}
-
-.cosmic-comm__link-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .cosmic-comm__chips {

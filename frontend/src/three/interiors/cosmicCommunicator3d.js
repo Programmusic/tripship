@@ -65,7 +65,16 @@ function createNode(member, index) {
 
   const color = hexToThree(member.color)
   const pending = member.isInvite && member.inviteStatus !== 'accepted'
-  const radius = member.nodeRadius3d ?? 0.085
+  const radius = member.nodeRadius3d ?? 0.12
+
+  const hit = addMesh(
+    group,
+    new THREE.SphereGeometry(radius * 2.4, 12, 12),
+    new THREE.MeshBasicMaterial({ visible: false }),
+    [0, 0, 0]
+  )
+  hit.userData.isCosmicNode = true
+  hit.userData.crewId = member.id
 
   const core = addMesh(
     group,
@@ -95,7 +104,8 @@ function createNode(member, index) {
   ring.userData.animType = 'cosmicNodeRing'
 
   const label = nameLabel(member.name, member.color)
-  label.position.set(0, -0.22, 0)
+  label.scale.set(0.72, 0.18, 1)
+  label.position.set(0, -0.28, 0)
   group.add(label)
 
   const light = new THREE.PointLight(color, 2, 2)
@@ -139,10 +149,40 @@ function clearGroup(group) {
   }
 }
 
-export function updateCosmicCommunicator3d(root, invites = []) {
+export function findCosmicNode(group, camera, maxDist = 5.5) {
+  const nodes = []
+  group?.traverse((obj) => {
+    if (obj.userData?.isCosmicNode) nodes.push(obj)
+  })
+  if (!nodes.length) return null
+
+  const origin = camera.position.clone()
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
+
+  let best = null
+  let bestDot = 0.52
+
+  for (const obj of nodes) {
+    const worldPos = new THREE.Vector3()
+    obj.getWorldPosition(worldPos)
+    const toObj = worldPos.clone().sub(origin)
+    const dist = toObj.length()
+    if (dist > maxDist) continue
+    toObj.normalize()
+    const dot = forward.dot(toObj)
+    if (dot > bestDot) {
+      bestDot = dot
+      best = obj
+    }
+  }
+
+  return best
+}
+
+export function updateCosmicCommunicator3d(root, invites = [], profiles = null) {
   if (!root) return
 
-  const { crew, bonds } = buildCosmicNetwork(invites)
+  const { crew, bonds } = buildCosmicNetwork({ invites, profiles })
   root.userData.cosmicCrew = crew
   root.userData.cosmicBonds = bonds
 
@@ -198,6 +238,6 @@ export function createCosmicCommunicator3d(invites = []) {
   root.add(ambient)
   root.userData.ambientLight = ambient
 
-  updateCosmicCommunicator3d(root, invites)
+  updateCosmicCommunicator3d(root, invites, profiles)
   return root
 }

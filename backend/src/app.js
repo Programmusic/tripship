@@ -7,11 +7,14 @@ import { getDb } from './db/index.js'
 import authRoutes from './routes/auth.js'
 import memoriesRoutes from './routes/memories.js'
 import mixesRoutes from './routes/mixes.js'
+import latticeRoutes from './routes/latticeProfiles.js'
+import { ensureLatticeProfilesSeeded } from './services/latticeProfiles.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export async function createApp() {
   await getDb()
+  await ensureLatticeProfilesSeeded()
 
   const app = express()
 
@@ -29,6 +32,7 @@ export async function createApp() {
   app.use('/api/auth', authRoutes)
   app.use('/api/memories', memoriesRoutes)
   app.use('/api/mixes', mixesRoutes)
+  app.use('/api/lattice', latticeRoutes)
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', service: 'tripship-api' })

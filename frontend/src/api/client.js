@@ -36,6 +36,10 @@ const api = {
     if (isDemoMode) return { data: await mockRequest('POST', url, data) }
     return http.post(url, data, config)
   },
+  async patch(url, data, config) {
+    if (isDemoMode) return { data: await mockRequest('PATCH', url, data) }
+    return http.patch(url, data, config)
+  },
 }
 
 export default api

@@ -51,16 +51,31 @@ export const CORE_CREW = [
   },
 ]
 
-const NODE_RADIUS_2D = 9.5
-const NODE_RADIUS_3D = 0.085
-
 /** Stable neutral order — no list-order privilege for any crew member */
 export function sortLatticeCrew(members) {
   return [...members].sort((a, b) => a.id.localeCompare(b.id))
 }
 
+const NODE_RADIUS_2D = 13
+const NODE_RADIUS_3D = 0.12
+
+export function profileToNode(profile) {
+  return {
+    id: profile.latticeId,
+    latticeId: profile.latticeId,
+    name: profile.name,
+    role: profile.role || 'Lattice Mate',
+    signal: profile.signal || '',
+    bio: profile.bio || '',
+    color: profile.color || '#00ffcc',
+    avatarUrl: profile.avatarUrl ?? null,
+    userId: profile.userId ?? null,
+    isCoreCrew: !!profile.isCoreCrew,
+  }
+}
+
 /** Equal-spacing ring — every node same distance from centre */
-export function layoutCircle2D(count, cx = 50, cy = 50, radius = 31) {
+export function layoutCircle2D(count, cx = 50, cy = 50, radius = 27) {
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * Math.PI * 2 - Math.PI / 2
     return {
@@ -150,13 +165,17 @@ function inviteNode(inv) {
   }
 }
 
-/** Merge core crew + invitees into one equal moleculous lattice */
-export function buildCosmicNetwork(invites = []) {
+/** Merge lattice profiles + invitees into one equal moleculous lattice */
+export function buildCosmicNetwork({ invites = [], profiles = null } = {}) {
+  const baseCrew = profiles?.length
+    ? profiles.map(profileToNode)
+    : CORE_CREW.map((member) => ({ ...member, latticeId: member.id }))
+
   const inviteMembers = (invites ?? [])
     .filter((inv) => inv?.name)
     .map(inviteNode)
 
-  const crew = sortLatticeCrew([...CORE_CREW, ...inviteMembers])
+  const crew = sortLatticeCrew([...baseCrew, ...inviteMembers])
   const positions2d = layoutCircle2D(crew.length)
   const positions3d = layoutRing3D(crew.length)
 

@@ -1,9 +1,11 @@
 import { demoUser, mockMemories, mockMixes, mockArtifacts, mockBlogPosts, mockInvites } from './mockData.js'
+import { mockLatticeProfiles } from './mockLatticeProfiles.js'
 
 let memories = [...mockMemories]
 let mixes = [...mockMixes]
 let artifacts = [...mockArtifacts]
 let invites = [...mockInvites]
+let latticeProfiles = [...mockLatticeProfiles]
 let nextMemoryId = memories.length + 1
 let nextMixId = mixes.length + 1
 let nextInviteId = invites.length + 1
@@ -26,6 +28,30 @@ export async function mockRequest(method, url, data) {
     return post
   }
   if (method === 'GET' && url === '/invites') return [...invites]
+  if (method === 'GET' && url === '/lattice/profiles') return [...latticeProfiles]
+  if (method === 'GET' && url === '/lattice/profile/me') {
+    const profile = latticeProfiles.find((p) => p.latticeId === demoUser.username)
+      || latticeProfiles.find((p) => p.userId === demoUser.id)
+    if (!profile) throw { response: { data: { error: 'Profile not found' }, status: 404 } }
+    return { ...profile }
+  }
+  if (method === 'GET' && url.startsWith('/lattice/profiles/')) {
+    const latticeId = url.replace('/lattice/profiles/', '')
+    const profile = latticeProfiles.find((p) => p.latticeId === latticeId)
+    if (!profile) throw { response: { data: { error: 'Lattice profile not found' }, status: 404 } }
+    return { ...profile }
+  }
+
+  if (method === 'PATCH' && url === '/lattice/profile/me') {
+    const idx = latticeProfiles.findIndex((p) => p.latticeId === demoUser.username || p.userId === demoUser.id)
+    if (idx < 0) throw { response: { data: { error: 'Profile not found' }, status: 404 } }
+    latticeProfiles[idx] = {
+      ...latticeProfiles[idx],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    }
+    return { ...latticeProfiles[idx] }
+  }
 
   if (method === 'POST' && url === '/auth/login') {
     return { token: 'demo-token', user: demoUser }

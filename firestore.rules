@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Lattice profiles — public read, writes via Trip Ship API (Admin SDK)
+    match /lattice_profiles/{latticeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
